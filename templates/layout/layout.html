@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<!--[if IE 8]> <html lang="en" class="ie8 no-js"> <![endif]-->
+<!--[if IE 9]> <html lang="en" class="ie9 no-js"> <![endif]-->
+<!--[if !IE]><!-->
+<html lang="en">
+    <!--<![endif]-->
+    <!-- BEGIN HEAD -->
+    {% load static %}
+    <head>
+        <meta charset="utf-8" />
+        <title>{% if not is_master %}{{site_title}}:{% endif %} {% block title %}{% endblock %}</title>
+
+        {% include "layout/head.html" %}
+
+        {% block extrahead %}
+        {% endblock extrahead %}
+
+        {% block extrastyle %}
+        {% endblock extrastyle %}
+    </head>
+    <!-- END HEAD -->
+
+    <!-- BEGIN BODY -->
+    {% block body_tag %}
+    <body>
+    {% endblock body_tag %}
+        <div class="page-wrapper" id="main-wrapper" data-layout="vertical" data-navbarbg="skin6" data-sidebartype="full"
+            data-sidebar-position="fixed" data-header-position="fixed">
+            <!-- BEGIN SIDEBAR -->
+            {% block sidebar %}
+                {% include "layout/sidebar.html" %}
+            {% endblock sidebar %}
+
+            <div class="body-wrapper">
+            <!-- BEGIN HEADER -->
+                {% include "layout/topmenu.html" %}
+
+                <div class="body-wrapper-inner">
+                    <div class="container-fluid">
+
+                        {% block content %}
+                        {% endblock content %}
+                        <!-- BEGIN FOOTER -->
+                        {% include "layout/footer.html" %}
+                        <!-- END FOOTER -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% include "layout/javascript.html" %}
+
+    {% block extrajs %}
+    {% endblock extrajs %}
+
+    </body>
+</html>

@@ -1,0 +1,159 @@
+{% extends "layout/layout.html" %}
+{% load static %}
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<!-- Row 1 - Top Widgets -->
+          <div class="row">
+            <div class="col-lg-4">
+              <div class="card">
+                <div class="card-body">
+                  <h5 class="card-title">Today’s Bookings</h5>
+                  <ul class="list-group">
+                    <li class="list-group-item d-flex justify-content-between">
+                      Booking #101 <span class="badge bg-primary">Confirmed</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between">
+                      Booking #102 <span class="badge bg-warning">Pending</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between">
+                      Booking #103 <span class="badge bg-success">Completed</span>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+            <div class="col-lg-4">
+              <div class="card text-center">
+                <div class="card-body">
+                  <h5 class="card-title">Pending Payments</h5>
+                  <h1 class="display-5 text-danger">8</h1>
+                  <p class="text-muted">Awaiting clearance</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="col-lg-4">
+              <div class="card">
+                <div class="card-body">
+                  <h5 class="card-title">Total Earnings</h5>
+                  <canvas id="earningsChart" height="100"></canvas>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Row 2 - Map & Revenue -->
+          <div class="row mt-4">
+            <div class="col-lg-6">
+              <div class="card">
+                <div class="card-body">
+                  <h5 class="card-title">Bookings Per Region (Dubai)</h5>
+                  <div id="dubaiMap" style="height: 300px;"></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="col-lg-6">
+              <div class="card">
+                <div class="card-body">
+                  <h5 class="card-title">Revenue Per Service Type</h5>
+                  <canvas id="serviceRevenueChart" height="300"></canvas>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Row 3 - Cleaner Assignment Table -->
+          <div class="row mt-4">
+            <div class="col-12">
+              <div class="card">
+                <div class="card-body">
+                  <h5 class="card-title">Cleaner Assignment Status</h5>
+                  <div class="table-responsive">
+                    <table class="table table-hover">
+                      <thead>
+                        <tr>
+                          <th>Cleaner</th>
+                          <th>Assigned Bookings</th>
+                          <th>Status</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr>
+                          <td>John Doe</td>
+                          <td>5</td>
+                          <td><span class="badge bg-success">Active</span></td>
+                        </tr>
+                        <tr>
+                          <td>Jane Smith</td>
+                          <td>3</td>
+                          <td><span class="badge bg-warning">On Break</span></td>
+                        </tr>
+                        <tr>
+                          <td>Ali Khan</td>
+                          <td>7</td>
+                          <td><span class="badge bg-danger">Unavailable</span></td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+{% endblock content %}
+
+{% block extrajs %}
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      // Initialize Dubai Map
+      const map = L.map('dubaiMap').setView([25.276987, 55.296249], 11);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+      }).addTo(map);
+
+      const regions = [
+        { name: "Downtown Dubai", coords: [25.2048, 55.2708], count: 12 },
+        { name: "Deira", coords: [25.2697, 55.3088], count: 8 },
+        { name: "Jumeirah", coords: [25.211, 55.256], count: 6 },
+      ];
+
+      regions.forEach(region => {
+        L.marker(region.coords).addTo(map)
+          .bindPopup(`<b>${region.name}</b><br>Bookings: ${region.count}`);
+      });
+
+      // Total Earnings Chart
+      new Chart(document.getElementById('earningsChart'), {
+        type: 'line',
+        data: {
+          labels: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
+          datasets: [{
+            label: "Earnings (AED)",
+            data: [1000, 1200, 900, 1500, 1800, 2000, 1700],
+            borderColor: "#007bff",
+            fill: false
+          }]
+        }
+      });
+
+      // Revenue Per Service Type Chart
+      new Chart(document.getElementById('serviceRevenueChart'), {
+        type: 'bar',
+        data: {
+          labels: ["Cleaning", "Repair", "Maintenance"],
+          datasets: [{
+            label: "Revenue (AED)",
+            data: [4000, 2500, 3000],
+            backgroundColor: ["#0d6efd", "#ffc107", "#198754"]
+          }]
+        }
+      });
+    });
+  </script>
+{% endblock extrajs %}
