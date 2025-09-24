@@ -18334,7 +18334,7 @@ fieldset:disabled .btn {
 .left-sidebar .scroll-sidebar {
   overflow-y: auto;
   padding: 0 24px;
-  height: calc(100vh - 310px);
+  height: calc(100vh - 120px);
   border-radius: 7px;
 }
 
@@ -18640,7 +18640,7 @@ body {
   margin: 0 auto;
   padding: 24px;
   transition: 0.2s ease-in;
-  padding-top: 97px;
+  padding-top: 95px;
 }
 
 @media (max-width: 991.98px) {
@@ -18651,7 +18651,7 @@ body {
   .body-wrapper .container-lg,
   .body-wrapper .container-xl,
   .body-wrapper .container-xxl {
-    padding-top: 0px;
+    padding-top: 100px;
   }
 }
 
@@ -18718,7 +18718,7 @@ body {
   }
 
   .left-sidebar .scroll-sidebar {
-    height: calc(100vh - 240px);
+    height: calc(100vh - 100px);
   }
 }
 
