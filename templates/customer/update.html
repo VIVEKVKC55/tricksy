@@ -1,0 +1,68 @@
+{% extends "layout/layout.html" %}
+
+{% block title %}Update Customer{% endblock %}
+
+{% block content %}
+<div class="body-wrapper-inner">
+  <div class="container-fluid">
+    <div class="card">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <h5 class="card-title fw-semibold">Update Customer</h5>
+          <a href="{% url 'customer:list' %}" class="btn btn-secondary btn-sm">
+            ← Back to List
+          </a>
+        </div>
+
+        <div class="card">
+          <div class="card-body">
+            <form method="post">
+              {% csrf_token %}
+              {{ form.non_field_errors }}
+
+              <div class="mb-3">
+                <label for="id_full_name" class="form-label">Full Name</label>
+                {{ form.full_name }}
+              </div>
+
+              <div class="mb-3">
+                <label for="id_region" class="form-label">Region</label>
+                {{ form.region }}
+              </div>
+
+              <div class="mb-3">
+                <label for="id_address" class="form-label">Address</label>
+                {{ form.address }}
+              </div>
+
+              <div class="mb-3">
+                <label for="id_google_location" class="form-label">Google Location</label>
+                {{ form.google_location }}
+              </div>
+
+              <div class="mb-3">
+                <label for="id_building" class="form-label">Building</label>
+                {{ form.building }}
+              </div>
+
+              <div class="mb-3">
+                <label for="id_unit" class="form-label">Unit</label>
+                {{ form.unit }}
+              </div>
+
+              <div class="mb-3">
+                <label for="id_location_notes" class="form-label">Location Notes</label>
+                {{ form.location_notes }}
+              </div>
+
+              <button type="submit" class="btn btn-primary">Update Customer</button>
+              <a href="{% url 'customer:list' %}" class="btn btn-light">Cancel</a>
+            </form>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

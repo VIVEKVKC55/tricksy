@@ -14,7 +14,7 @@ def manage_services_view(request):
     return JsonResponse({"detail": "Service management allowed!"})
 
 class LoginView(View):
-    template_name = "user/login.html"
+    template_name = "accounts/login.html"
 
     def get(self, request):
         """Render login page on GET request."""
@@ -24,15 +24,19 @@ class LoginView(View):
         """Handle login logic on POST request."""
         username = request.POST.get("username")
         password = request.POST.get("password")
+        next_url = request.GET.get("next") or request.POST.get("next")
+
         user = authenticate(request, username=username, password=password)
 
         if user:
             login(request, user)
             messages.success(request, "Login successful!")
-            return redirect("/")  # Change to dashboard or home page
+            if next_url:
+                return redirect(next_url)
+            return redirect("/")  # Fallback to dashboard/home
         else:
             messages.error(request, "Invalid username or password.")
-            return render(request, self.template_name)
+            return render(request, self.template_name, {"next": next_url})
 
 
 class LogoutView(View):
@@ -40,11 +44,11 @@ class LogoutView(View):
         """Log the user out and redirect to login page."""
         logout(request)
         messages.info(request, "You have been logged out.")
-        return redirect("user:login")  # Named URL for login page
+        return redirect("account:login")  # Named URL for login page
 
 
 class RegisterView(View):
-    template_name = "user/register.html"
+    template_name = "accounts/register.html"
 
     def get(self, request):
         """Render registration page on GET request."""

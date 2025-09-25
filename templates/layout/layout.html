@@ -8,7 +8,7 @@
     {% load static %}
     <head>
         <meta charset="utf-8" />
-        <title>{% if not is_master %}{{site_title}}:{% endif %} {% block title %}{% endblock %}</title>
+        <title>{% if not is_master %}{{site_title}}{% endif %} {% block title %}{% endblock %}</title>
 
         {% include "layout/head.html" %}
 
