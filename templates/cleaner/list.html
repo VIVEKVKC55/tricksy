@@ -1,0 +1,123 @@
+{% extends "layout/layout.html" %}
+{% load static %}
+{% block title %}Cleaner List{% endblock %}
+
+{% block content %}
+<div class="row mt-4">
+  <div class="col-12">
+    <div class="card">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h5 class="card-title">Cleaner List</h5>
+          <a href="{% url 'cleaner:create' %}" class="btn btn-primary">
+            <i class="bi bi-plus-lg"></i> Add Cleaner
+          </a>
+        </div>
+
+        <div class="table-responsive">
+          <table class="table table-hover">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Name</th>
+                <th>Company</th>
+                <th>Vehicle Code</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for cleaner in cleaners %}
+              <tr>
+                <td>{{ cleaner.id }}</td>
+                <td>{{ cleaner.name }}</td>
+                <td>{{ cleaner.company|default:"-" }}</td>
+                <td>{{ cleaner.vehicle_code|default:"-" }}</td>
+                <td>
+                  {% if cleaner.is_available %}
+                    <span class="badge bg-success">Available</span>
+                  {% else %}
+                    <span class="badge bg-danger">Unavailable</span>
+                  {% endif %}
+                </td>
+                <td>
+                  <a href="{% url 'cleaner:edit' cleaner.pk %}" class="btn btn-sm btn-warning">Edit</a>
+                  <a href="javascript:void(0);" class="btn btn-danger btn-sm delete-btn"
+                     data-url="{% url 'cleaner:delete' cleaner.pk %}">
+                    Delete
+                  </a>
+                </td>
+              </tr>
+              {% empty %}
+              <tr>
+                <td colspan="6" class="text-center">No cleaners found.</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extrajs %}
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  const deleteButtons = document.querySelectorAll(".delete-btn");
+
+  deleteButtons.forEach(button => {
+    button.addEventListener("click", function () {
+      const url = this.getAttribute("data-url");
+
+      Swal.fire({
+        title: "Are you sure?",
+        text: "This cleaner will be permanently deleted!",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonColor: "#d33",
+        cancelButtonColor: "#3085d6",
+        confirmButtonText: "Yes, delete it!"
+      }).then((result) => {
+        if (result.isConfirmed) {
+          fetch(url, {
+            method: "DELETE",
+            headers: {
+              "X-CSRFToken": getCookie("csrftoken"),
+              "X-Requested-With": "XMLHttpRequest"
+            }
+          })
+            .then(response => response.json())
+            .then(data => {
+              if (data.success) {
+                Swal.fire("Deleted!", data.message, "success").then(() => {
+                  location.reload();
+                });
+              } else {
+                Swal.fire("Error!", "Something went wrong.", "error");
+              }
+            });
+        }
+      });
+    });
+  });
+
+  function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== "") {
+      const cookies = document.cookie.split(";");
+      for (let i = 0; i < cookies.length; i++) {
+        const cookie = cookies[i].trim();
+        if (cookie.substring(0, name.length + 1) === (name + "=")) {
+          cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+          break;
+        }
+      }
+    }
+    return cookieValue;
+  }
+});
+</script>
+{% endblock %}

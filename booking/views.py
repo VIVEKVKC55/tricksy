@@ -53,21 +53,19 @@ class BookingCreateView(View):
             booking = form.save(user=request.user)
 
             for sf in service_formset:
-                if sf.cleaned_data and not sf.cleaned_data.get("DELETE"):
-                    booking_service = sf.save(commit=False)
-                    booking_service.booking = booking
-                    booking_service.save()
+                booking_service = sf.save(commit=False)
+                booking_service.booking = booking
+                booking_service.save()
 
             for cf in cleaner_formset:
-                if cf.cleaned_data and not cf.cleaned_data.get("DELETE"):
-                    booking_cleaner = cf.save(commit=False)
-                    booking_cleaner.booking = booking
-                    booking_cleaner.save()
+                booking_cleaner = cf.save(commit=False)
+                booking_cleaner.booking = booking
+                booking_cleaner.save()
 
             messages.success(request, "Booking created successfully!")
             return redirect("booking:list")
 
-        return render(request, "booking/booking_form.html", {
+        return render(request, "booking/update.html", {
             "form": form,
             "service_formset": service_formset,
             "cleaner_formset": cleaner_formset,
@@ -75,8 +73,8 @@ class BookingCreateView(View):
 
 
 class BookingUpdateView(View):
-    def get(self, request, pk):
-        booking = get_object_or_404(Booking, pk=pk)
+    def get(self, request, booking_id):
+        booking = get_object_or_404(Booking, pk=booking_id)
         form = BookingForm(instance=booking)
         ServiceFormSet = modelformset_factory(BookingService, form=BookingServiceForm, extra=0, can_delete=True)
         CleanerFormSet = modelformset_factory(BookingCleaner, form=BookingCleanerForm, extra=0, can_delete=True)
@@ -91,8 +89,8 @@ class BookingUpdateView(View):
             "booking": booking,
         })
 
-    def post(self, request, pk):
-        booking = get_object_or_404(Booking, pk=pk)
+    def post(self, request, booking_id):
+        booking = get_object_or_404(Booking, pk=booking_id)
         form = BookingForm(request.POST, instance=booking)
         ServiceFormSet = modelformset_factory(BookingService, form=BookingServiceForm, extra=0, can_delete=True)
         CleanerFormSet = modelformset_factory(BookingCleaner, form=BookingCleanerForm, extra=0, can_delete=True)
@@ -124,7 +122,7 @@ class BookingUpdateView(View):
             messages.success(request, "Booking updated successfully!")
             return redirect("booking:list")
 
-        return render(request, "booking/booking_form.html", {
+        return render(request, "booking/update.html", {
             "form": form,
             "service_formset": service_formset,
             "cleaner_formset": cleaner_formset,
