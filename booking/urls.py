@@ -5,7 +5,8 @@ app_name = 'booking'
 
 urlpatterns = [
     path('', views.home, name='home'),
-    # path('create/', views.create_booking, name='create_booking'),
-    # path('view/<int:booking_id>/', views.view_booking, name='view_booking'),
-    # path('cancel/<int:booking_id>/', views.cancel_booking, name='cancel_booking'),
+    path('list/', views.BookingListView.as_view(), name='list'),
+    path('create/', views.BookingCreateView.as_view(), name='create'),
+    path('update/<int:booking_id>/', views.BookingUpdateView.as_view(), name='update'),
+    path('delete/<int:booking_id>/', views.BookingDeleteView.as_view(), name='delete'),
 ]
