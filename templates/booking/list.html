@@ -15,55 +15,90 @@
             </div>
             <div class="table-responsive">
             <table class="table table-hover">
-                <thead>
+              <thead>
                 <tr>
-                    <th>Reference</th>
-                    <th>Customer</th>
-                    <th>Services</th>
-                    <th>Cleaners</th>
-                    <th>Start</th>
-                    <th>End</th>
-                    <th>Created By</th>
-                    <th>Actions</th>
+                  <th>Reference</th>
+                  <th>Customer</th>
+                  <th>Address</th>
+                  <th>Region</th>
+                  <th>Services (No. of Cleaners)</th>
+                  {% comment %} <th>No. of Cleaners</th> {% endcomment %}
+                  <th>Cleaners</th>
+                  <th>Duration (Start → End)</th>
+                  <th>Payment Info</th>
+                  <th>Created By</th>
+                  <th>Actions</th>
                 </tr>
-                </thead>
-                <tbody>
+              </thead>
+
+              <tbody>
                 {% for booking in bookings %}
                 <tr>
-                    <td>{{ booking.booking_reference }}</td>
-                    <td>{{ booking.customer.full_name }}</td>
-                    <td>
-                        {% for bs in booking.booking_services.all %}
-                            <span class="badge bg-primary">{{ bs.service.name }} ({{ bs.number_of_cleaners }})</span><br>
-                        {% empty %}
-                            -
-                        {% endfor %}
-                    </td>
-                    <td>
-                        {% for bc in booking.booking_cleaners.all %}
-                            <span class="badge bg-success">{{ bc.cleaner.name }}</span><br>
-                        {% empty %}
-                            -
-                        {% endfor %}
-                    </td>
-                    <td>{{ booking.start_date }} {{ booking.start_time }}</td>
-                    <td>{{ booking.end_date }} {{ booking.end_time }}</td>
-                    <td>{{ booking.created_by.username }}</td>
-                    <td>
-                        <a href="{% url 'booking:update' booking.pk %}" class="btn btn-sm btn-warning">Edit</a>
-                        <a href="javascript:void(0);" 
-                           class="btn btn-danger btn-sm delete-btn" 
-                           data-url="{% url 'booking:delete' booking.pk %}">
-                           Delete
-                        </a>
-                    </td>
+                  <!-- Booking Reference -->
+                  <td><strong>{{ booking.booking_reference }}</strong></td>
+
+                  <!-- Customer Info -->
+                  <td>{{ booking.customer.full_name }}</td>
+                  <td>{{ booking.customer.address|default:"-" }}</td>
+                  <td>{{ booking.customer.region|default:"-" }}</td>
+
+                  <!-- Services -->
+                  <td>
+                    {% for bs in booking.booking_services.all %}
+                      <span class="badge bg-primary mb-1">
+                        {{ bs.service.name }} ({{ bs.number_of_cleaners }})
+                      </span><br>
+                    {% empty %}
+                      <span class="text-muted">No services</span>
+                    {% endfor %}
+                  </td>
+                  <!-- Number of Cleaners -->
+                  {% comment %} <td>{{ booking.total_cleaners }}</td> {% endcomment %}
+
+                  <!-- Cleaners -->
+                  <td>
+                    {% if booking.is_cleaner_assigned %}
+                      {% for bc in booking.booking_cleaners.all %}
+                        <span class="badge bg-success mb-1">{{ bc.cleaner.name }}</span><br>
+                      {% endfor %}
+                    {% else %}
+                      <span class="badge bg-secondary">Not Assigned</span>
+                    {% endif %}
+                  </td>
+
+                  <!-- Duration -->
+                  <td>
+                    {{ booking.start_date }} {{ booking.start_time }}<br>
+                    → {{ booking.end_date }} {{ booking.end_time }}
+                  </td>
+
+                  <!-- Payment Info -->
+                  <td>{{ booking.payment_status }}</td>
+
+                  <!-- Created By -->
+                  <td>{{ booking.created_by.username|default:"-" }}</td>
+
+                  <!-- Actions -->
+                  <td>
+                    <a href="{% url 'booking:update' booking.pk %}" class="btn btn-sm btn-warning me-1" title="Edit">
+                      <i class="fa fa-edit"></i>
+                    </a>
+                    <a href="javascript:void(0);" class="btn btn-sm btn-danger delete-btn" data-url="{% url 'booking:delete' booking.pk %}" title="Delete">
+                      <i class="fa fa-trash"></i>
+                    </a>
+                    <a href="{% url 'booking:assign' booking.pk %}" class="btn btn-sm btn-info me-1" title="Assign Cleaners & Payment">
+                      <i class="fa fa-edit"></i>
+                    </a>
+                  </td>
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="8" class="text-center">No bookings found.</td>
+                  <td colspan="10" class="text-center text-muted py-4">
+                    No bookings found.
+                  </td>
                 </tr>
                 {% endfor %}
-                </tbody>
+              </tbody>
             </table>
             </div>
         </div>

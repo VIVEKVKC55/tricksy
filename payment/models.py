@@ -23,17 +23,16 @@ class Payment(models.Model):
     discount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     net_amount = models.DecimalField(max_digits=10, decimal_places=2)
     paid_at = models.DateTimeField(auto_now_add=True)
-    status = models.CharField(max_length=10, choices=PAYMENT_STATUS, default="pending")
+    # status = models.CharField(max_length=10, choices=PAYMENT_STATUS, default="pending")
 
     def save(self, *args, **kwargs):
-        # Auto calculate net amount
-        self.net_amount = self.amount - self.discount
-        if self.net_amount < 0:
-            self.net_amount = 0
+        """Automatically calculate net amount before saving."""
+        self.net_amount = max(self.amount - self.discount, 0)
         super().save(*args, **kwargs)
 
     def __str__(self):
-        return f"{self.booking.booking_reference} - {self.payment_method} - {self.net_amount} AED"
-
+        return f"{self.booking.booking_reference} - {self.payment_method.title()} - {self.net_amount} AED"
+    
     class Meta:
         db_table = "payments"
+        ordering = ["-paid_at"]

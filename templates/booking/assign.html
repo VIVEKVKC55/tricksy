@@ -1,0 +1,176 @@
+{% extends "layout/layout.html" %}
+{% block title %}Assign Cleaners & Payment{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  {% if messages %}
+    {% for message in messages %}
+      <div class="alert alert-success alert-dismissible fade show" role="alert">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+      </div>
+    {% endfor %}
+  {% endif %}
+
+  <div class="card shadow-sm">
+    <div class="card-body">
+      <h5 class="card-title mb-3">
+        Assign Cleaners & Payment — 
+        <span class="text-primary">{{ booking.booking_reference }}</span>
+      </h5>
+      <hr>
+
+      <form method="post" id="assignForm">
+        {% csrf_token %}
+        
+        <!-- Cleaner selection -->
+        <h6>Select Cleaners</h6>
+        <p class="text-muted mb-2">
+          You must select exactly 
+          <strong id="requiredCleaners">{{ booking.booking_services.first.number_of_cleaners }}</strong> 
+          cleaner(s).
+        </p>
+
+        <!-- 🔍 Search bar -->
+        <input type="text" id="searchCleaner" class="form-control mb-3" placeholder="Search cleaner...">
+
+        <!-- Cleaner list -->
+        <div class="d-flex flex-wrap gap-2" id="cleanerList">
+          {% for cleaner in cleaners %}
+            <div class="cleaner-card border rounded p-2 text-center position-relative" 
+                 data-id="{{ cleaner.id }}" 
+                 data-name="{{ cleaner.name }}"
+                 style="width: 120px; cursor: pointer; display: none;"
+                 {% if cleaner.id in assigned_cleaners %}data-selected="true"{% else %}data-selected="false"{% endif %}>
+              <i class="fa fa-user fa-2x mb-2 text-secondary"></i>
+              <p class="m-0 fw-semibold">{{ cleaner.name }}</p>
+              <i class="fa fa-check-circle text-success position-absolute top-0 end-0 m-1 d-none"></i>
+            </div>
+          {% endfor %}
+        </div>
+
+        <input type="hidden" name="cleaners" id="cleanersInput">
+
+        <hr>
+
+        <!-- Payment summary -->
+        <div class="row mb-3">
+          <div class="col-md-4">
+            <label class="form-label">Selected Cleaners</label>
+            <input type="text" id="selectedCount" class="form-control" value="0" readonly>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Total Amount</label>
+            <input type="text" id="totalAmount" class="form-control" 
+                   value="0 AED" readonly>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Payment Method</label>
+            <select name="payment_method" class="form-select" required>
+              <option value="">-- Select Method --</option>
+              <option value="cash">Cash</option>
+              <option value="card">Card</option>
+              <option value="upi">UPI</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="text-end">
+          <button type="submit" class="btn btn-success">
+            <i class="fa fa-check"></i> Confirm & Save
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  const required = parseInt(document.getElementById("requiredCleaners").innerText);
+  const cleanerCards = document.querySelectorAll(".cleaner-card");
+  const cleanersInput = document.getElementById("cleanersInput");
+  const selectedCountField = document.getElementById("selectedCount");
+  const totalAmountField = document.getElementById("totalAmount");
+  const searchInput = document.getElementById("searchCleaner");
+
+  const pricePerCleaner = parseFloat("{{ booking.booking_services.first.service.base_price|default:0 }}");
+
+  // 🔹 Show only first 10 cleaners
+  function showLimited(cleaners) {
+    cleaners.forEach((card, index) => {
+      card.style.display = index < 10 ? "inline-block" : "none";
+    });
+  }
+
+  // 🔹 Update count + total
+  function updateSummary() {
+    const selected = Array.from(cleanerCards)
+      .filter(c => c.dataset.selected === "true")
+      .map(c => ({ id: c.dataset.id }));
+
+    selectedCountField.value = selected.length;
+    totalAmountField.value = (selected.length * pricePerCleaner).toFixed(2) + " AED";
+    cleanersInput.value = selected.map(c => c.id).join(",");
+  }
+
+  // 🔹 Select/Deselect cleaner visually
+  cleanerCards.forEach(card => {
+    const checkIcon = card.querySelector(".fa-check-circle");
+
+    card.addEventListener("click", function () {
+      const selectedCount = Array.from(cleanerCards).filter(c => c.dataset.selected === "true").length;
+
+      if (this.dataset.selected === "true") {
+        this.dataset.selected = "false";
+        this.classList.remove("bg-success", "text-white");
+        checkIcon.classList.add("d-none");
+      } else {
+        if (selectedCount >= required) {
+          alert(`You can select only ${required} cleaners.`);
+          return;
+        }
+        this.dataset.selected = "true";
+        this.classList.add("bg-success", "text-white");
+        checkIcon.classList.remove("d-none");
+      }
+
+      updateSummary();
+    });
+
+    // Keep check mark visible for already selected cleaners
+    if (card.dataset.selected === "true") {
+      card.classList.add("bg-success", "text-white");
+      checkIcon.classList.remove("d-none");
+    }
+  });
+
+  // 🔹 Search filter (max 10 results)
+  searchInput.addEventListener("input", function () {
+    const term = this.value.toLowerCase();
+    const filtered = Array.from(cleanerCards).filter(card => {
+      const name = card.dataset.name.toLowerCase();
+      const match = name.includes(term);
+      card.style.display = match ? "inline-block" : "none";
+      return match;
+    });
+    filtered.forEach((card, index) => {
+      card.style.display = index < 10 ? "inline-block" : "none";
+    });
+  });
+
+  // 🔹 Validation before submit
+  document.getElementById("assignForm").addEventListener("submit", function (e) {
+    const count = Array.from(cleanerCards).filter(c => c.dataset.selected === "true").length;
+    if (count !== required) {
+      e.preventDefault();
+      alert(`Please select exactly ${required} cleaners.`);
+    }
+  });
+
+  // Initialize
+  showLimited(cleanerCards);
+  updateSummary();
+});
+</script>
+{% endblock %}

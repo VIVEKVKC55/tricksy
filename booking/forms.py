@@ -7,7 +7,6 @@ class BookingForm(forms.ModelForm):
     class Meta:
         model = Booking
         fields = [
-            "customer",
             "start_date",
             "start_time",
             "end_date",
@@ -17,7 +16,6 @@ class BookingForm(forms.ModelForm):
             "entry_instruction",
         ]
         widgets = {
-            "customer": forms.Select(attrs={"class": "form-select"}),
             "start_date": forms.DateInput(attrs={"type": "date", "class": "form-control"}),
             "end_date": forms.DateInput(attrs={"type": "date", "class": "form-control"}),
             "start_time": forms.TimeInput(attrs={"type": "time", "class": "form-control"}),
