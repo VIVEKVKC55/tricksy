@@ -1,5 +1,5 @@
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.http import JsonResponse
+from django.http import HttpResponseForbidden, JsonResponse
 from django.shortcuts import redirect, render, get_object_or_404
 from django.views import View
 from django.forms import modelformset_factory
@@ -14,17 +14,27 @@ from customer.forms import CustomerForm
 from payment.models import Payment
 from cleaner.models import Cleaner
 from django.db import transaction
+from account.utils import user_has_access
 
 
 def home(request):
     return render(request, 'booking/home.html')
 
 
-class BookingListView(ListView):
+class BookingListView(LoginRequiredMixin, ListView):
     model = Booking
     template_name = "booking/list.html"
     context_object_name = "bookings"
     paginate_by = 10
+
+    def dispatch(self, request, *args, **kwargs):
+        """
+        Override dispatch() to check permission before processing the view.
+        """
+        if not user_has_access(request.user, "view_bookings"):
+            context = {"message": "🚫 Access denied: Superadmins only!"}
+            return render(request, "errors/forbidden_alert.html", context, status=403)
+        return super().dispatch(request, *args, **kwargs)
 
     def get_queryset(self):
         """
@@ -54,6 +64,16 @@ class BookingListView(ListView):
         return context
 
 class BookingCreateView(LoginRequiredMixin, View):
+
+    def dispatch(self, request, *args, **kwargs):
+        """
+        Override dispatch() to check permission before processing the view.
+        """
+        if not user_has_access(request.user, "manage_bookings"):
+            context = {"message": "🚫 Access denied: Superadmins only!"}
+            return render(request, "errors/forbidden_alert.html", context, status=403)
+        return super().dispatch(request, *args, **kwargs)
+
     def get(self, request):
         booking_form = BookingForm()
         customer_form = CustomerForm()
@@ -108,7 +128,17 @@ class BookingCreateView(LoginRequiredMixin, View):
         })
 
 
-class BookingUpdateView(View):
+class BookingUpdateView(LoginRequiredMixin, View):
+
+    def dispatch(self, request, *args, **kwargs):
+        """
+        Override dispatch() to check permission before processing the view.
+        """
+        if not user_has_access(request.user, "manage_bookings"):
+            context = {"message": "🚫 Access denied: Superadmins only!"}
+            return render(request, "errors/forbidden_alert.html", context, status=403)
+        return super().dispatch(request, *args, **kwargs)
+
     def get(self, request, booking_id):
         booking = get_object_or_404(Booking, pk=booking_id)
         form = BookingForm(instance=booking)
@@ -166,9 +196,18 @@ class BookingUpdateView(View):
         })
 
 
-class BookingDeleteView(DeleteView):
+class BookingDeleteView(LoginRequiredMixin, DeleteView):
     model = Booking
     success_url = reverse_lazy("booking:list")
+
+    def dispatch(self, request, *args, **kwargs):
+        """
+        Override dispatch() to check permission before processing the view.
+        """
+        if not user_has_access(request.user, "manage_bookings"):
+            context = {"message": "🚫 Access denied: Superadmins only!"}
+            return render(request, "errors/forbidden_alert.html", context, status=403)
+        return super().dispatch(request, *args, **kwargs)
 
     def delete(self, request, *args, **kwargs):
         self.object = self.get_object()
@@ -178,8 +217,17 @@ class BookingDeleteView(DeleteView):
         messages.success(request, "Booking deleted successfully!")
         return super().delete(request, *args, **kwargs)
     
-class BookingAssignView(View):
+class BookingAssignView(LoginRequiredMixin, View):
     template_name = "booking/assign.html"
+
+    def dispatch(self, request, *args, **kwargs):
+        """
+        Override dispatch() to check permission before processing the view.
+        """
+        if not user_has_access(request.user, "manage_bookings"):
+            context = {"message": "🚫 Access denied: Superadmins only!"}
+            return render(request, "errors/forbidden_alert.html", context, status=403)
+        return super().dispatch(request, *args, **kwargs)
 
     def get(self, request, pk):
         booking = get_object_or_404(Booking, pk=pk)

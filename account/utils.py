@@ -1,15 +1,24 @@
 # utils.py
 from tricksy.constants import PERMISSIONS
+from account.models import Role, RolePermissions
 
 def user_has_access(user, permission_code):
     """
-    ✅ Always True if Superadmin
-    ✅ For Subadmin → check if permission_code is in their permissions
+    ✅ Grants access based on role permissions.
+       - Superadmin → always True
+       - Subadmin → check RolePermissions for 'subadmin'
     """
+    # if user doesn't have a role
     if not hasattr(user, "role"):
         return False
 
-    if user.role.role == "superadmin":
-        return True  # full access
+    # Superadmin always has full access
+    if user.role.role == Role.SUPERADMIN:
+        return True
 
-    return permission_code in user.role.permissions
+    # Subadmin → check in RolePermissions model
+    try:
+        role_perms = RolePermissions.objects.get(role=Role.SUBADMIN)
+        return permission_code in (role_perms.permissions or [])
+    except RolePermissions.DoesNotExist:
+        return False

@@ -1,0 +1,22 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Access Denied</title>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+<body>
+  <script>
+    Swal.fire({
+      icon: "error",
+      title: "Access Denied",
+      text: "{{ message }}",
+      confirmButtonText: "Go Back"
+    }).then(() => {
+      // Go back or redirect safely
+      window.history.back();
+    });
+  </script>
+</body>
+</html>

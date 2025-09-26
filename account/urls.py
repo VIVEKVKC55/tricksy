@@ -4,6 +4,9 @@ from . import views
 app_name = 'account'
 
 urlpatterns = [
+    path('list/', views.UserListView.as_view(), name='list'),
+    path('create-subadmin/', views.CreateSubadminView.as_view(), name='create_subadmin'),
+    path('manage-permissions/', views.ManageSubadminPermissionsView.as_view(), name='manage_permissions'),
     path('login/', views.LoginView.as_view(), name='login'),
     path('logout/', views.LogoutView.as_view(), name='logout'),
     path('register/', views.RegisterView.as_view(), name='register'),
