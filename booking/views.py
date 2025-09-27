@@ -224,7 +224,7 @@ class BookingAssignView(LoginRequiredMixin, View):
         """
         Override dispatch() to check permission before processing the view.
         """
-        if not user_has_access(request.user, "manage_bookings"):
+        if not user_has_access(request.user, "assign_cleaners"):
             context = {"message": "🚫 Access denied: Superadmins only!"}
             return render(request, "errors/forbidden_alert.html", context, status=403)
         return super().dispatch(request, *args, **kwargs)

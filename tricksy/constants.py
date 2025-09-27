@@ -8,6 +8,8 @@ PERMISSIONS = {
     "view_bookings": "View Bookings",
     "manage_bookings": "View/Add/Edit Bookings",
     "assign_cleaners": "Assign Cleaners",
+    "view_cleaners": "View Cleaners",
+    "manage_cleaners": "Manage Cleaners",
     "manage_payments": "View/Add Payments",
     "view_customers": "View Customer & Booking Details",
     "manage_customers": "Manage Customers",

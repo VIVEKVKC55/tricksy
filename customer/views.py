@@ -7,9 +7,10 @@ from account.utils import user_has_access
 from .models import Customer
 from .forms import CustomerForm
 from django.http import JsonResponse
+from django.contrib.auth.mixins import LoginRequiredMixin
 
 # List View with DataTable
-class CustomerListView(ListView):
+class CustomerListView(LoginRequiredMixin, ListView):
     model = Customer 
     template_name = "customer/list.html"
     context_object_name = "customers"
@@ -24,7 +25,7 @@ class CustomerListView(ListView):
         return super().dispatch(request, *args, **kwargs)
 
 # Create View
-class CustomerCreateView(CreateView):
+class CustomerCreateView(LoginRequiredMixin, CreateView):
     model = Customer
     form_class = CustomerForm
     template_name = "customer/create.html"
@@ -44,7 +45,7 @@ class CustomerCreateView(CreateView):
         return super().form_valid(form)
 
 # Update View
-class CustomerUpdateView(UpdateView):
+class CustomerUpdateView(LoginRequiredMixin, UpdateView):
     model = Customer
     form_class = CustomerForm
     template_name = "customer/update.html"
@@ -64,7 +65,7 @@ class CustomerUpdateView(UpdateView):
         return super().form_valid(form)
 
 # Delete View
-class CustomerDeleteView(DeleteView):
+class CustomerDeleteView(LoginRequiredMixin, DeleteView):
     model = Customer
     success_url = reverse_lazy("customer:list")
 

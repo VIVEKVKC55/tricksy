@@ -29,22 +29,55 @@
             <img src="{% static 'assets/images/profile/user-1.jpg' %}" alt="" width="35" height="35" class="rounded-circle">
         </a>
         <div class="dropdown-menu dropdown-menu-end dropdown-menu-animate-up" aria-labelledby="drop2">
-            <div class="message-body">
-            <a href="javascript:void(0)" class="d-flex align-items-center gap-2 dropdown-item">
-                <i class="ti ti-user fs-6"></i>
-                <p class="mb-0 fs-3">My Profile</p>
-            </a>
-            <a href="javascript:void(0)" class="d-flex align-items-center gap-2 dropdown-item">
-                <i class="ti ti-mail fs-6"></i>
-                <p class="mb-0 fs-3">My Account</p>
-            </a>
-            <a href="javascript:void(0)" class="d-flex align-items-center gap-2 dropdown-item">
-                <i class="ti ti-list-check fs-6"></i>
-                <p class="mb-0 fs-3">My Task</p>
-            </a>
-            <a href="{% url 'account:logout' %}" class="btn btn-outline-primary mx-3 mt-2 d-block">Logout</a>
+            <div class="message-body text-center">
+
+                {% if user.is_authenticated %}
+                <!-- ✅ Show user photo -->
+                <img src="{% static 'assets/images/profile/user-1.jpg' %}" alt="User Avatar"
+                    width="60" height="60" class="rounded-circle mb-2">
+
+                <!-- ✅ Show username & email -->
+                <h6 class="mb-0">{{ user.get_full_name|default:user.username }}</h6>
+                <p class="text-muted mb-2">{{ user.email }}</p>
+
+                <hr>
+
+                <a href="javascript:void(0)" class="d-flex align-items-center gap-2 dropdown-item">
+                    <i class="ti ti-user fs-6"></i>
+                    <p class="mb-0 fs-3">My Profile</p>
+                </a>
+                <a href="javascript:void(0)" class="d-flex align-items-center gap-2 dropdown-item">
+                    <i class="ti ti-mail fs-6"></i>
+                    <p class="mb-0 fs-3">My Account</p>
+                </a>
+                <a href="javascript:void(0)" class="d-flex align-items-center gap-2 dropdown-item">
+                    <i class="ti ti-list-check fs-6"></i>
+                    <p class="mb-0 fs-3">My Task</p>
+                </a>
+
+                <a href="{% url 'account:logout' %}" class="btn btn-outline-primary mx-3 mt-2 d-block">
+                    Logout
+                </a>
+                {% else %}
+                <a href="javascript:void(0)" class="d-flex align-items-center gap-2 dropdown-item">
+                    <i class="ti ti-user fs-6"></i>
+                    <p class="mb-0 fs-3">My Profile</p>
+                </a>
+                <a href="javascript:void(0)" class="d-flex align-items-center gap-2 dropdown-item">
+                    <i class="ti ti-mail fs-6"></i>
+                    <p class="mb-0 fs-3">My Account</p>
+                </a>
+                <a href="javascript:void(0)" class="d-flex align-items-center gap-2 dropdown-item">
+                    <i class="ti ti-list-check fs-6"></i>
+                    <p class="mb-0 fs-3">My Task</p>
+                </a>
+                <a href="{% url 'account:login' %}" class="btn btn-outline-primary mx-3 mt-2 d-block">
+                    Login
+                </a>
+                {% endif %}
             </div>
         </div>
+
         </li>
     </ul>
     </div>
