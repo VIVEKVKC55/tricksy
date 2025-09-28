@@ -17,7 +17,7 @@
   <div class="card shadow-sm">
     <div class="card-body">
       <h5 class="card-title mb-3">
-        Assign Cleaners & Payment — 
+        Assign Cleaners & Payment —
         <span class="text-primary">{{ booking.booking_reference }}</span>
       </h5>
       <hr>
@@ -65,14 +65,15 @@
             <label class="form-label">Payment Method</label>
             <select name="payment_method" class="form-select" required>
               <option value="">-- Select Method --</option>
-              <option value="cash">Cash</option>
-              <option value="card">Card</option>
-              <option value="upi">UPI</option>
+              <option value="cash" {% if payment.payment_method == "cash" %}selected{% endif %}>Cash</option>
+              <option value="card" {% if payment.payment_method == "card" %}selected{% endif %}>Card</option>
+              <option value="upi" {% if payment.payment_method == "upi" %}selected{% endif %}>UPI</option>
             </select>
           </div>
           <div class="col-md-4">
             <label class="form-label">Total Amount (AED)</label>
-            <input type="text" id="totalAmount" class="form-control" value="0.00" readonly>
+            <input type="text" id="booking_amount" name="booking_amount" class="form-control" 
+                   value="{{ payment.booking_amount }}">
           </div>
         </div>
 
@@ -93,24 +94,19 @@ document.addEventListener("DOMContentLoaded", function () {
   const cleanerCards = document.querySelectorAll(".cleaner-card");
   const cleanersInput = document.getElementById("cleanersInput");
   const selectedCountField = document.getElementById("selectedCount");
-  const totalAmountField = document.getElementById("totalAmount");
   const searchInput = document.getElementById("searchCleaner");
 
-  // Base price per cleaner from backend (use first service base price or fallback 0)
-  const pricePerCleaner = parseFloat("{{ booking.booking_services.first.service.base_price|default:0 }}");
-
-  // --- Update count + total + hidden input ---
   function updateSummary() {
     const selected = Array.from(cleanerCards)
       .filter(c => c.dataset.selected === "true")
       .map(c => c.dataset.id);
 
     selectedCountField.value = selected.length;
-    totalAmountField.value = (selected.length * pricePerCleaner).toFixed(2);
     cleanersInput.value = selected.join(",");
+
+    console.log("Selected cleaners:", cleanersInput.value);
   }
 
-  // --- Select / Deselect cleaners ---
   cleanerCards.forEach(card => {
     const checkIcon = card.querySelector(".fa-check-circle");
 
@@ -124,7 +120,6 @@ document.addEventListener("DOMContentLoaded", function () {
       }
     };
 
-    // Preselect already assigned cleaners
     updateSelectionVisuals();
 
     card.addEventListener("click", () => {
@@ -143,7 +138,6 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   });
 
-  // --- Search filter ---
   searchInput.addEventListener("input", function () {
     const term = this.value.toLowerCase();
     cleanerCards.forEach(card => {
@@ -152,7 +146,6 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   });
 
-  // --- Validation before submit ---
   document.getElementById("assignForm").addEventListener("submit", function (e) {
     const count = Array.from(cleanerCards).filter(c => c.dataset.selected === "true").length;
     if (count !== required) {

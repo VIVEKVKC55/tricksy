@@ -217,6 +217,7 @@ class BookingAssignView(LoginRequiredMixin, View):
         assigned_cleaners = list(
             booking.booking_cleaners.values_list("cleaner_id", flat=True)
         )
+        payment = Payment.objects.filter(booking_id=booking.id).first()
         total_required_cleaners = booking.total_required_cleaners()
 
         return render(
@@ -224,6 +225,7 @@ class BookingAssignView(LoginRequiredMixin, View):
             self.template_name,
             {
                 "booking": booking,
+                "payment": payment,
                 "cleaners": cleaners,
                 "assigned_cleaners": assigned_cleaners,
                 "total_required_cleaners": total_required_cleaners,
@@ -234,43 +236,50 @@ class BookingAssignView(LoginRequiredMixin, View):
     def post(self, request, pk):
         """Handle cleaner assignment and payment."""
         booking = get_object_or_404(Booking, pk=pk)
-        cleaner_ids = request.POST.get("cleaners", "").split(",")
-        payment_method = request.POST.get("payment_method")
+        print("POST DATA:", request.POST)
 
-        # --- Validation 1: Correct number of cleaners ---
+        # ✅ FIX 1: Split the hidden field value into IDs
+        cleaners_raw = request.POST.get("cleaners", "")
+        cleaner_ids = [cid for cid in cleaners_raw.split(",") if cid.strip()]
+
+        payment_method = request.POST.get("payment_method")
+        booking_amount = request.POST.get("booking_amount")
+
+        # ✅ FIX 2: Convert amount safely to decimal or 0
+        try:
+            booking_amount = float(booking_amount or 0)
+        except ValueError:
+            booking_amount = 0
+
+        # ✅ FIX 3: Validation for cleaner count
         required_cleaners = booking.total_required_cleaners()
-        if len([cid for cid in cleaner_ids if cid]) != required_cleaners:
+        if len(cleaner_ids) != required_cleaners:
             messages.error(
                 request,
                 f"You must assign exactly {required_cleaners} cleaners (selected {len(cleaner_ids)}).",
             )
             return redirect("booking:assign", pk=pk)
 
-        # --- Validation 2: Payment method required ---
         if not payment_method:
             messages.error(request, "Please select a payment method.")
             return redirect("booking:assign", pk=pk)
 
-        # --- Assign cleaners ---
+        # --- Assign Cleaners ---
         BookingCleaner.objects.filter(booking=booking).delete()
         for cid in cleaner_ids:
-            if cid:  # Avoid blank IDs
-                BookingCleaner.objects.create(booking=booking, cleaner_id=cid)
+            BookingCleaner.objects.create(booking=booking, cleaner_id=cid)
 
-        # --- Calculate total amount dynamically ---
-        total_amount = 1000
-
-        # --- Create or update payment record ---
+        # --- Create or Update Payment ---
         Payment.objects.update_or_create(
             booking=booking,
             defaults={
                 "payment_method": payment_method,
-                "booking_amount": total_amount,
+                "booking_amount": booking_amount,
             },
         )
 
         messages.success(
             request,
-            f"✅ {required_cleaners} cleaners assigned and payment of {total_amount} AED recorded successfully!",
+            f"✅ {required_cleaners} cleaners assigned and payment of {booking_amount:.2f} AED recorded successfully!"
         )
         return redirect("booking:list")
