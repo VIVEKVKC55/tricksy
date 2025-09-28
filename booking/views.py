@@ -17,10 +17,6 @@ from django.db import transaction
 from account.utils import user_has_access
 
 
-def home(request):
-    return render(request, 'booking/home.html')
-
-
 class BookingListView(LoginRequiredMixin, ListView):
     model = Booking
     template_name = "booking/list.html"
@@ -60,7 +56,6 @@ class BookingListView(LoginRequiredMixin, ListView):
             booking.latest_payment = payments[0] if payments else None
             booking.is_cleaner_assigned = booking.booking_cleaners.exists()
             booking.payment_status = "Completed" if payments.exists() else "Pending"
-            # booking.total_cleaners = sum(bs.number_of_cleaners for bs in booking.booking_services.all())
         return context
 
 class BookingCreateView(LoginRequiredMixin, View):
@@ -119,7 +114,6 @@ class BookingCreateView(LoginRequiredMixin, View):
                 messages.success(request, "Booking and customer created successfully!")
                 return redirect("booking:list")  # redirect to booking list page
         except Exception as e:
-            print(e)
             messages.error(request, f"An error occurred: {str(e)}")
         return render(request, "booking/create.html", {
             "booking_form": booking_form,
@@ -143,15 +137,12 @@ class BookingUpdateView(LoginRequiredMixin, View):
         booking = get_object_or_404(Booking, pk=booking_id)
         form = BookingForm(instance=booking)
         ServiceFormSet = modelformset_factory(BookingService, form=BookingServiceForm, extra=0, can_delete=True)
-        CleanerFormSet = modelformset_factory(BookingCleaner, form=BookingCleanerForm, extra=0, can_delete=True)
 
         service_formset = ServiceFormSet(queryset=booking.booking_services.all())
-        cleaner_formset = CleanerFormSet(queryset=booking.booking_cleaners.all())
 
         return render(request, "booking/update.html", {
             "form": form,
             "service_formset": service_formset,
-            "cleaner_formset": cleaner_formset,
             "booking": booking,
         })
 
@@ -159,39 +150,28 @@ class BookingUpdateView(LoginRequiredMixin, View):
         booking = get_object_or_404(Booking, pk=booking_id)
         form = BookingForm(request.POST, instance=booking)
         ServiceFormSet = modelformset_factory(BookingService, form=BookingServiceForm, extra=0, can_delete=True)
-        CleanerFormSet = modelformset_factory(BookingCleaner, form=BookingCleanerForm, extra=0, can_delete=True)
 
         service_formset = ServiceFormSet(request.POST, queryset=booking.booking_services.all())
-        cleaner_formset = CleanerFormSet(request.POST, queryset=booking.booking_cleaners.all())
+        try:
+            if form.is_valid() and service_formset.is_valid():
+                booking = form.save(commit=False)
+                booking.save()
 
-        if form.is_valid() and service_formset.is_valid() and cleaner_formset.is_valid():
-            booking = form.save(user=request.user)
-
-            for sf in service_formset:
-                if sf.cleaned_data:
-                    if sf.cleaned_data.get("DELETE") and sf.instance.pk:
-                        sf.instance.delete()
-                    else:
+                for sf in service_formset:
+                    if sf.cleaned_data:
                         booking_service = sf.save(commit=False)
                         booking_service.booking = booking
                         booking_service.save()
 
-            for cf in cleaner_formset:
-                if cf.cleaned_data:
-                    if cf.cleaned_data.get("DELETE") and cf.instance.pk:
-                        cf.instance.delete()
-                    else:
-                        booking_cleaner = cf.save(commit=False)
-                        booking_cleaner.booking = booking
-                        booking_cleaner.save()
-
-            messages.success(request, "Booking updated successfully!")
-            return redirect("booking:list")
+                messages.success(request, "Booking updated successfully!")
+                return redirect("booking:list")
+        except Exception as e:
+            print(e)
+            messages.error(request, f"An error occurred: {str(e)}")
 
         return render(request, "booking/update.html", {
             "form": form,
             "service_formset": service_formset,
-            "cleaner_formset": cleaner_formset,
             "booking": booking,
         })
 
@@ -201,84 +181,105 @@ class BookingDeleteView(LoginRequiredMixin, DeleteView):
     success_url = reverse_lazy("booking:list")
 
     def dispatch(self, request, *args, **kwargs):
-        """
-        Override dispatch() to check permission before processing the view.
-        """
         if not user_has_access(request.user, "manage_bookings"):
             context = {"message": "🚫 Access denied: Superadmins only!"}
             return render(request, "errors/forbidden_alert.html", context, status=403)
         return super().dispatch(request, *args, **kwargs)
+
+    def get_object(self, queryset=None):
+        booking_id = self.kwargs.get("booking_id")
+        return get_object_or_404(Booking, id=booking_id)
 
     def delete(self, request, *args, **kwargs):
         self.object = self.get_object()
         self.object.delete()
         if request.headers.get("x-requested-with") == "XMLHttpRequest":
             return JsonResponse({"success": True, "message": "Booking deleted successfully!"})
-        messages.success(request, "Booking deleted successfully!")
-        return super().delete(request, *args, **kwargs)
+        messages.success(request, "✅ Booking deleted successfully!")
+        return redirect(self.success_url)
+
     
+
 class BookingAssignView(LoginRequiredMixin, View):
     template_name = "booking/assign.html"
 
     def dispatch(self, request, *args, **kwargs):
-        """
-        Override dispatch() to check permission before processing the view.
-        """
+        """Check permission before allowing access."""
         if not user_has_access(request.user, "assign_cleaners"):
             context = {"message": "🚫 Access denied: Superadmins only!"}
             return render(request, "errors/forbidden_alert.html", context, status=403)
         return super().dispatch(request, *args, **kwargs)
 
     def get(self, request, pk):
+        """Display the assign-cleaner form."""
         booking = get_object_or_404(Booking, pk=pk)
         cleaners = Cleaner.objects.all()
-        assigned_cleaners = list(booking.booking_cleaners.values_list("cleaner_id", flat=True))
-
+        assigned_cleaners = list(
+            booking.booking_cleaners.values_list("cleaner_id", flat=True)
+        )
+        payment = Payment.objects.filter(booking_id=booking.id).first()
         total_required_cleaners = booking.total_required_cleaners()
-        total_amount = booking.calculate_total_amount()
 
-        return render(request, self.template_name, {
-            "booking": booking,
-            "cleaners": cleaners,
-            "assigned_cleaners": assigned_cleaners,
-            "total_required_cleaners": total_required_cleaners,
-            "total_amount": total_amount,
-        })
+        return render(
+            request,
+            self.template_name,
+            {
+                "booking": booking,
+                "payment": payment,
+                "cleaners": cleaners,
+                "assigned_cleaners": assigned_cleaners,
+                "total_required_cleaners": total_required_cleaners,
+            },
+        )
 
     @transaction.atomic
     def post(self, request, pk):
+        """Handle cleaner assignment and payment."""
         booking = get_object_or_404(Booking, pk=pk)
-        cleaner_ids = request.POST.getlist("cleaners")
-        payment_method = request.POST.get("payment_method")
+        print("POST DATA:", request.POST)
 
-        # Validation 1: Check cleaner count
+        # ✅ FIX 1: Split the hidden field value into IDs
+        cleaners_raw = request.POST.get("cleaners", "")
+        cleaner_ids = [cid for cid in cleaners_raw.split(",") if cid.strip()]
+
+        payment_method = request.POST.get("payment_method")
+        booking_amount = request.POST.get("booking_amount")
+
+        # ✅ FIX 2: Convert amount safely to decimal or 0
+        try:
+            booking_amount = float(booking_amount or 0)
+        except ValueError:
+            booking_amount = 0
+
+        # ✅ FIX 3: Validation for cleaner count
         required_cleaners = booking.total_required_cleaners()
         if len(cleaner_ids) != required_cleaners:
             messages.error(
                 request,
-                f"You must assign exactly {required_cleaners} cleaners (selected {len(cleaner_ids)})."
+                f"You must assign exactly {required_cleaners} cleaners (selected {len(cleaner_ids)}).",
             )
             return redirect("booking:assign", pk=pk)
 
-        # Validation 2: Payment method required
         if not payment_method:
             messages.error(request, "Please select a payment method.")
             return redirect("booking:assign", pk=pk)
 
-        # Assign cleaners
+        # --- Assign Cleaners ---
         BookingCleaner.objects.filter(booking=booking).delete()
         for cid in cleaner_ids:
             BookingCleaner.objects.create(booking=booking, cleaner_id=cid)
 
-        # Calculate and save payment
-        amount = booking.calculate_total_amount()
-        Payment.objects.create(
+        # --- Create or Update Payment ---
+        Payment.objects.update_or_create(
             booking=booking,
-            payment_method=payment_method,
-            amount=amount,
-            discount=0,
-            net_amount=amount,
+            defaults={
+                "payment_method": payment_method,
+                "booking_amount": booking_amount,
+            },
         )
 
-        messages.success(request, "✅ Cleaners assigned and payment recorded successfully!")
+        messages.success(
+            request,
+            f"✅ {required_cleaners} cleaners assigned and payment of {booking_amount:.2f} AED recorded successfully!"
+        )
         return redirect("booking:list")

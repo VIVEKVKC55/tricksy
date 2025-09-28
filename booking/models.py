@@ -21,20 +21,13 @@ class Booking(models.Model):
     def __str__(self):
         return f"{self.booking_reference} ({self.customer.full_name})"
 
-    def calculate_total_amount(self):
-        """
-        Calculates total amount based on all assigned services and their cleaner count.
-        """
-        total = 0
-        for bs in self.booking_services.select_related("service").all():
-            total += bs.service.base_price * bs.number_of_cleaners
-        return total
-
     def total_required_cleaners(self):
         """
-        Returns total number of cleaners required across all services in the booking.
+        Returns total number of cleaners required across all services in this booking.
         """
-        return sum(bs.number_of_cleaners for bs in self.booking_services.all())
+        return sum(
+            bs.service.number_of_cleaners for bs in self.booking_services.all()
+        )
 
     class Meta:
         db_table = 'bookings'
@@ -42,7 +35,6 @@ class Booking(models.Model):
 class BookingService(models.Model):
     booking = models.ForeignKey(Booking, on_delete=models.CASCADE, related_name="booking_services")
     service = models.ForeignKey(Service, on_delete=models.PROTECT, related_name="service_bookings")
-    number_of_cleaners = models.PositiveIntegerField(default=1)
 
     class Meta:
         unique_together = ("booking", "service")

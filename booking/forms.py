@@ -40,10 +40,9 @@ class BookingForm(forms.ModelForm):
 class BookingServiceForm(forms.ModelForm):
     class Meta:
         model = BookingService
-        fields = ["service", "number_of_cleaners"]
+        fields = ["service"]
         widgets = {
             "service": forms.Select(attrs={"class": "form-select"}),
-            "number_of_cleaners": forms.NumberInput(attrs={"class": "form-control", "min": 1}),
         }
 
 

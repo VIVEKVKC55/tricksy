@@ -21,7 +21,7 @@
                   <th>Customer</th>
                   <th>Address</th>
                   <th>Region</th>
-                  <th>Services (No. of Cleaners)</th>
+                  <th>Services</th>
                   {% comment %} <th>No. of Cleaners</th> {% endcomment %}
                   <th>Cleaners</th>
                   <th>Duration (Start → End)</th>
@@ -46,7 +46,7 @@
                   <td>
                     {% for bs in booking.booking_services.all %}
                       <span class="badge bg-primary mb-1">
-                        {{ bs.service.name }} ({{ bs.number_of_cleaners }})
+                      {{ bs.service.get_service_type_display }}
                       </span><br>
                     {% empty %}
                       <span class="text-muted">No services</span>
@@ -87,7 +87,7 @@
                       <i class="fa fa-trash"></i>
                     </a>
                     <a href="{% url 'booking:assign' booking.pk %}" class="btn btn-sm btn-info me-1" title="Assign Cleaners & Payment">
-                      <i class="fa fa-edit"></i>
+                      <i class="fa-solid fa-plus-circle"></i>
                     </a>
                   </td>
                 </tr>

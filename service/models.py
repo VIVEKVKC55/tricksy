@@ -1,13 +1,18 @@
 from django.db import models
 
 class Service(models.Model):
-    name = models.CharField(max_length=255)
-    description = models.TextField(blank=True)
+    SERVICE_TYPES = [
+        ('home', 'Home Cleaning'),
+        ('office', 'Office Cleaning'),
+    ]
+
+    service_type = models.CharField(max_length=50, choices=SERVICE_TYPES)
     duration = models.PositiveIntegerField(help_text="Duration in minutes")
     material = models.TextField(blank=True)
-    base_price = models.DecimalField(max_digits=10, decimal_places=2)
+    number_of_cleaners = models.PositiveIntegerField(default=1)
 
     def __str__(self):
-        return self.name
+        return f"{self.get_service_type_display()} - ({self.number_of_cleaners})"
+
     class Meta:
         db_table = 'services'
