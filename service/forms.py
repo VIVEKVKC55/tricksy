@@ -4,11 +4,10 @@ from .models import Service
 class ServiceForm(forms.ModelForm):
     class Meta:
         model = Service
-        fields = ["name", "description", "duration", "material", "base_price"]
+        fields = ["service_type", "duration", "material", "number_of_cleaners"]
         widgets = {
-            "name": forms.TextInput(attrs={"class": "form-control"}),
-            "description": forms.Textarea(attrs={"class": "form-control", "rows": 3}),
+            "service_type": forms.Select(attrs={"class": "form-control"}),
             "duration": forms.NumberInput(attrs={"class": "form-control"}),
             "material": forms.Textarea(attrs={"class": "form-control", "rows": 2}),
-            "base_price": forms.NumberInput(attrs={"class": "form-control"}),
+            "number_of_cleaners": forms.NumberInput(attrs={"class": "form-control"}),
         }

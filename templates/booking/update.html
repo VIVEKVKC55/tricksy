@@ -19,9 +19,6 @@
         {{ form.non_field_errors }}
 
         <div class="row">
-          <div class="col-md-6 mb-3">
-            {{ form.customer.label_tag }} {{ form.customer }}
-          </div>
           <div class="col-md-3 mb-3">
             {{ form.start_date.label_tag }} {{ form.start_date }}
           </div>
@@ -52,17 +49,6 @@
         {% for sf in service_formset %}
           <div class="row mb-2">
             <div class="col-md-6">{{ sf.service }}</div>
-            <div class="col-md-2">No. of Cleaners</div>
-            <div class="col-md-4">{{ sf.number_of_cleaners }}</div>
-          </div>
-        {% endfor %}
-
-        <hr>
-        <h6>Cleaners</h6>
-        {{ cleaner_formset.management_form }}
-        {% for cf in cleaner_formset %}
-          <div class="row mb-2">
-            <div class="col-md-8">{{ cf.cleaner }}</div>
           </div>
         {% endfor %}
 
