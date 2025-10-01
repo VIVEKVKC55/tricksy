@@ -96,15 +96,17 @@ class BookingCreateView(LoginRequiredMixin, View):
         service_formset = ServiceFormSet(request.POST, queryset=BookingService.objects.none())
 
         try:
-            if all([booking_form.is_valid(), customer_form.is_valid(), service_formset.is_valid()]):
-                email = customer_form.cleaned_data.get("email")
+            # Step 1: Extract email from POST
+            email = request.POST.get("email")
+            existing_customer = None
+            if email:
                 existing_customer = Customer.objects.filter(email=email).first()
-                if existing_customer:
-                    customer_form = CustomerForm(request.POST, instance=existing_customer)
-                    customer = customer_form.save()
-                else:
-                    # Create new customer
-                    customer = customer_form.save()
+            if existing_customer:
+                customer_form = CustomerForm(request.POST, instance=existing_customer)
+            else:
+                customer_form = CustomerForm(request.POST)
+            if all([booking_form.is_valid(), customer_form.is_valid(), service_formset.is_valid()]):
+                customer = customer_form.save()
 
                 # Save booking linked to this customer
                 booking = booking_form.save(commit=False)
@@ -112,8 +114,7 @@ class BookingCreateView(LoginRequiredMixin, View):
                 booking.created_by = request.user
                 booking.save()
 
-
-                # Save services
+                # Step 7: Save all services
                 for sf in service_formset:
                     service = sf.save(commit=False)
                     service.booking = booking
@@ -124,11 +125,18 @@ class BookingCreateView(LoginRequiredMixin, View):
 
         except Exception as e:
             messages.error(request, f"An error occurred: {str(e)}")
-        return render(request, "booking/create.html", {
-            "booking_form": booking_form,
-            "customer_form": customer_form,
-            "service_formset": service_formset,
-        })
+            print(str(e))
+
+        return render(
+            request,
+            "booking/create.html",
+            {
+                "booking_form": booking_form,
+                "customer_form": customer_form,
+                "service_formset": service_formset,
+            },
+        )
+
 
 
 class BookingUpdateView(LoginRequiredMixin, View):
