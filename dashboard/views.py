@@ -28,7 +28,7 @@ class HomeView(LoginRequiredMixin, TemplateView):
             day = today - timedelta(days=i)
             total_earnings = (
                 Payment.objects.filter(paid_at__date=day)
-                .aggregate(total=Sum("booking_amount"))["total"]
+                .aggregate(total=Sum("net_amount"))["total"]
                 or 0
             )
             earnings_labels.append(day.strftime("%a"))
@@ -44,7 +44,7 @@ class HomeView(LoginRequiredMixin, TemplateView):
         for service in Service.objects.all():
             total = (
                 Payment.objects.filter(booking__booking_services__service=service)
-                .aggregate(total=Sum("booking_amount"))["total"]
+                .aggregate(total=Sum("net_amount"))["total"]
                 or 0
             )
             service_labels.append(service.get_service_type_display())
@@ -55,7 +55,7 @@ class HomeView(LoginRequiredMixin, TemplateView):
 
         # === Total Summary ===
         context["total_earnings"] = (
-            Payment.objects.aggregate(total=Sum("booking_amount"))["total"] or 0
+            Payment.objects.aggregate(total=Sum("net_amount"))["total"] or 0
         )
 
         return context

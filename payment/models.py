@@ -13,7 +13,9 @@ class Payment(models.Model):
 
     booking = models.ForeignKey(Booking, on_delete=models.CASCADE, related_name="payments")
     payment_method = models.CharField(max_length=10, choices=PAYMENT_METHOD_CHOICES)
-    booking_amount = models.DecimalField(max_digits=10, decimal_places=2)
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    discount = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    net_amount = models.DecimalField(max_digits=10, decimal_places=2)
     paid_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):

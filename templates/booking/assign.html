@@ -55,25 +55,88 @@
 
         <hr>
 
-        <!-- Payment Details -->
-        <div class="row mb-3">
-          <div class="col-md-4">
-            <label class="form-label">Selected Cleaners</label>
-            <input type="text" id="selectedCount" class="form-control" value="0" readonly>
+        <div class="row g-4 mb-4">
+          <!-- Left Column: Cleaners -->
+          <div class="col-md-6">
+            <div class="card shadow-sm border-0 h-100">
+              <div class="card-header bg-success text-white py-2">
+                <h6 class="mb-0">🧹 Selected Cleaners</h6>
+              </div>
+              <div class="card-body">
+                <label class="form-label fw-semibold">Total Selected</label>
+                <input 
+                  type="text" 
+                  id="selectedCount" 
+                  class="form-control text-center fs-5 fw-bold bg-light"
+                  value="0" 
+                  readonly
+                >
+              </div>
+            </div>
           </div>
-          <div class="col-md-4">
-            <label class="form-label">Payment Method</label>
-            <select name="payment_method" class="form-select" required>
-              <option value="">-- Select Method --</option>
-              <option value="cash" {% if payment.payment_method == "cash" %}selected{% endif %}>Cash</option>
-              <option value="card" {% if payment.payment_method == "card" %}selected{% endif %}>Card</option>
-              <option value="upi" {% if payment.payment_method == "upi" %}selected{% endif %}>UPI</option>
-            </select>
-          </div>
-          <div class="col-md-4">
-            <label class="form-label">Total Amount (AED)</label>
-            <input type="text" id="booking_amount" name="booking_amount" class="form-control" 
-                   value="{{ payment.booking_amount }}">
+
+          <!-- Right Column: Payment Details -->
+          <div class="col-md-6">
+            <div class="card shadow-sm border-0 h-100">
+              <div class="card-header bg-primary text-white py-2">
+                <h6 class="mb-0">💳 Payment Details</h6>
+              </div>
+              <div class="card-body">
+                <div class="row g-3">
+                  <!-- Payment Method -->
+                  <div class="col-12">
+                    <label class="form-label fw-semibold">Payment Method</label>
+                    <select name="payment_method" class="form-select" required>
+                      <option value="">-- Select Method --</option>
+                      <option value="cash" {% if payment.payment_method == "cash" %}selected{% endif %}>Cash</option>
+                      <option value="card" {% if payment.payment_method == "card" %}selected{% endif %}>Card</option>
+                      <option value="upi" {% if payment.payment_method == "upi" %}selected{% endif %}>UPI</option>
+                    </select>
+                  </div>
+
+                  <!-- Total Amount -->
+                  <div class="col-12">
+                    <label class="form-label fw-semibold">Total Amount (AED)</label>
+                    <input 
+                      type="number" 
+                      id="amount" 
+                      name="amount" 
+                      class="form-control" 
+                      placeholder="Enter total amount"
+                      value="{{ payment.amount|default:'' }}"
+                      min="0" step="0.01"
+                    >
+                  </div>
+
+                  <!-- Discount -->
+                  <div class="col-12">
+                    <label class="form-label fw-semibold">Discount (AED)</label>
+                    <input 
+                      type="number" 
+                      id="discount" 
+                      name="discount" 
+                      class="form-control" 
+                      placeholder="Enter discount"
+                      value="{{ payment.discount|default:'' }}"
+                      min="0" step="0.01"
+                    >
+                  </div>
+
+                  <!-- Net Amount -->
+                  <div class="col-12">
+                    <label class="form-label fw-semibold">Net Amount (AED)</label>
+                    <input 
+                      type="number" 
+                      id="net_amount" 
+                      name="net_amount" 
+                      class="form-control bg-light text-success fw-bold"
+                      readonly
+                      value="{{ payment.net_amount|default:'' }}"
+                    >
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -156,5 +219,26 @@ document.addEventListener("DOMContentLoaded", function () {
 
   updateSummary();
 });
+</script>
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const amountInput = document.getElementById("amount");
+    const discountInput = document.getElementById("discount");
+    const netAmountInput = document.getElementById("net_amount");
+
+    function calculateNetAmount() {
+      const amount = parseFloat(amountInput.value) || 0;
+      const discount = parseFloat(discountInput.value) || 0;
+      const net = Math.max(amount - discount, 0);
+      netAmountInput.value = net.toFixed(2);
+    }
+
+    // Auto-calculate when amount or discount changes
+    amountInput.addEventListener("input", calculateNetAmount);
+    discountInput.addEventListener("input", calculateNetAmount);
+
+    // Initial calculation
+    calculateNetAmount();
+  });
 </script>
 {% endblock %}

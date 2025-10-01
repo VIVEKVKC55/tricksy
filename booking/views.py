@@ -218,85 +218,89 @@ class BookingDeleteView(LoginRequiredMixin, DeleteView):
     
 
 class BookingAssignView(LoginRequiredMixin, View):
+    """View to assign cleaners to a booking and record payment."""
     template_name = "booking/assign.html"
 
     def dispatch(self, request, *args, **kwargs):
-        """Check permission before allowing access."""
+        """Restrict access to only users with assign_cleaners permission."""
         if not user_has_access(request.user, "assign_cleaners"):
-            context = {"message": "🚫 Access denied: Superadmins only!"}
-            return render(request, "errors/forbidden_alert.html", context, status=403)
+            return render(
+                request,
+                "errors/forbidden_alert.html",
+                {"message": "🚫 Access denied: Superadmins only!"},
+                status=403,
+            )
         return super().dispatch(request, *args, **kwargs)
 
     def get(self, request, pk):
-        """Display the assign-cleaner form."""
+        """Display the cleaner assignment and payment form."""
         booking = get_object_or_404(Booking, pk=pk)
         cleaners = Cleaner.objects.all()
-        assigned_cleaners = list(
-            booking.booking_cleaners.values_list("cleaner_id", flat=True)
-        )
-        payment = Payment.objects.filter(booking_id=booking.id).first()
+        assigned_cleaners = booking.booking_cleaners.values_list("cleaner_id", flat=True)
+        payment = Payment.objects.filter(booking=booking).first()
         total_required_cleaners = booking.total_required_cleaners()
 
-        return render(
-            request,
-            self.template_name,
-            {
-                "booking": booking,
-                "payment": payment,
-                "cleaners": cleaners,
-                "assigned_cleaners": assigned_cleaners,
-                "total_required_cleaners": total_required_cleaners,
-            },
-        )
+        context = {
+            "booking": booking,
+            "cleaners": cleaners,
+            "assigned_cleaners": list(assigned_cleaners),
+            "payment": payment,
+            "total_required_cleaners": total_required_cleaners,
+        }
+        return render(request, self.template_name, context)
 
     @transaction.atomic
     def post(self, request, pk):
-        """Handle cleaner assignment and payment."""
+        """Handle cleaner assignment and payment processing."""
         booking = get_object_or_404(Booking, pk=pk)
-        print("POST DATA:", request.POST)
 
-        # ✅ FIX 1: Split the hidden field value into IDs
-        cleaners_raw = request.POST.get("cleaners", "")
-        cleaner_ids = [cid for cid in cleaners_raw.split(",") if cid.strip()]
-
-        payment_method = request.POST.get("payment_method")
-        booking_amount = request.POST.get("booking_amount")
-
-        # ✅ FIX 2: Convert amount safely to decimal or 0
         try:
-            booking_amount = float(booking_amount or 0)
-        except ValueError:
-            booking_amount = 0
+            # --- Cleaners Selection ---
+            cleaners_raw = request.POST.get("cleaners", "")
+            cleaner_ids = [cid for cid in cleaners_raw.split(",") if cid.strip()]
 
-        # ✅ FIX 3: Validation for cleaner count
-        required_cleaners = booking.total_required_cleaners()
-        if len(cleaner_ids) != required_cleaners:
-            messages.error(
-                request,
-                f"You must assign exactly {required_cleaners} cleaners (selected {len(cleaner_ids)}).",
+            required_cleaners = booking.total_required_cleaners()
+            if len(cleaner_ids) != required_cleaners:
+                messages.error(
+                    request,
+                    f"❌ You must assign exactly {required_cleaners} cleaners (selected {len(cleaner_ids)}).",
+                )
+                return redirect("booking:assign", pk=pk)
+
+            # --- Payment Details ---
+            payment_method = request.POST.get("payment_method")
+            amount = float(request.POST.get("amount", 0) or 0)
+            discount = float(request.POST.get("discount", 0) or 0)
+            net_amount = float(request.POST.get("net_amount", amount - discount))
+
+            if not payment_method:
+                messages.error(request, "⚠️ Please select a payment method.")
+                return redirect("booking:assign", pk=pk)
+
+            # --- Assign Cleaners ---
+            BookingCleaner.objects.filter(booking=booking).delete()
+            BookingCleaner.objects.bulk_create([
+                BookingCleaner(booking=booking, cleaner_id=cid) for cid in cleaner_ids
+            ])
+
+            # --- Create or Update Payment ---
+            Payment.objects.update_or_create(
+                booking=booking,
+                defaults={
+                    "payment_method": payment_method,
+                    "amount": amount,
+                    "discount": discount,
+                    "net_amount": net_amount,
+                },
             )
+
+            messages.success(
+                request,
+                f"✅ {required_cleaners} cleaners assigned successfully. "
+                f"Payment of {net_amount:.2f} AED recorded!"
+            )
+            return redirect("booking:list")
+
+        except Exception as e:
+            messages.error(request, f"⚠️ Error processing request: {str(e)}")
             return redirect("booking:assign", pk=pk)
-
-        if not payment_method:
-            messages.error(request, "Please select a payment method.")
-            return redirect("booking:assign", pk=pk)
-
-        # --- Assign Cleaners ---
-        BookingCleaner.objects.filter(booking=booking).delete()
-        for cid in cleaner_ids:
-            BookingCleaner.objects.create(booking=booking, cleaner_id=cid)
-
-        # --- Create or Update Payment ---
-        Payment.objects.update_or_create(
-            booking=booking,
-            defaults={
-                "payment_method": payment_method,
-                "booking_amount": booking_amount,
-            },
-        )
-
-        messages.success(
-            request,
-            f"✅ {required_cleaners} cleaners assigned and payment of {booking_amount:.2f} AED recorded successfully!"
-        )
-        return redirect("booking:list")
