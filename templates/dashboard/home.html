@@ -168,8 +168,14 @@
                 `,
               });
 
-              marker.addListener("click", () => {
+              // Show on hover
+              marker.addListener("mouseover", () => {
                 infoWindow.open(map, marker);
+              });
+
+              // Hide when mouse leaves
+              marker.addListener("mouseout", () => {
+                infoWindow.close();
               });
             }
           });
