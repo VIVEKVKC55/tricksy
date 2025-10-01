@@ -50,7 +50,7 @@
               <div class="card">
                 <div class="card-body">
                   <h5 class="card-title">Bookings Per Region (Dubai)</h5>
-                  <div id="dubaiMap" style="height: 300px;"></div>
+                  <div id="map" style="height: 600px; width: 100%;"></div>
                 </div>
               </div>
             </div>
@@ -106,28 +106,10 @@
 {% endblock content %}
 
 {% block extrajs %}
-  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDQJC-cQjiKA_M_YCJbbefHMLCzBwzp1zs"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
   <script>
     document.addEventListener("DOMContentLoaded", function () {
-      // Initialize Dubai Map
-      const map = L.map('dubaiMap').setView([25.276987, 55.296249], 11);
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        maxZoom: 19,
-      }).addTo(map);
-
-      const regions = [
-        { name: "Downtown Dubai", coords: [25.2048, 55.2708], count: 12 },
-        { name: "Deira", coords: [25.2697, 55.3088], count: 8 },
-        { name: "Jumeirah", coords: [25.211, 55.256], count: 6 },
-      ];
-
-      regions.forEach(region => {
-        L.marker(region.coords).addTo(map)
-          .bindPopup(`<b>${region.name}</b><br>Bookings: ${region.count}`);
-      });
-
       // Total Earnings Chart
       new Chart(document.getElementById('earningsChart'), {
         type: 'line',
@@ -156,4 +138,45 @@
       });
     });
   </script>
+  <script>
+    function initMap() {
+      const map = new google.maps.Map(document.getElementById("map"), {
+        zoom: 11,
+        center: { lat: 25.276987, lng: 55.296249 }, // Center of Dubai
+      });
+
+      fetch("{% url 'dashboard:region_bookings_api' %}")
+        .then(response => response.json())
+        .then(data => {
+          data.regions.forEach(region => {
+            if (region.latitude && region.longitude) {
+              const marker = new google.maps.Marker({
+                position: { lat: region.latitude, lng: region.longitude },
+                map: map,
+                title: region.region_name,
+                icon: {
+                  url: "http://maps.google.com/mapfiles/ms/icons/red-dot.png",
+                },
+              });
+
+              const infoWindow = new google.maps.InfoWindow({
+                content: `
+                  <div style="min-width:150px;">
+                    <strong>${region.region_name}</strong><br>
+                    Total Bookings: <b>${region.booking_count}</b>
+                  </div>
+                `,
+              });
+
+              marker.addListener("click", () => {
+                infoWindow.open(map, marker);
+              });
+            }
+          });
+        });
+    }
+
+    window.onload = initMap;
+  </script>
+
 {% endblock extrajs %}
