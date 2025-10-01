@@ -1,6 +1,13 @@
 # tricksy/constants.py
 # Define all possible permissions here
 
+import os
+from pathlib import Path
+
+BASE_DIR = Path(__file__).resolve().parent.parent
+
+GOOGLE_MAPS_API_KEY = os.getenv("GOOGLE_MAPS_API_KEY")
+
 PERMISSIONS = {
     "manage_subadmins": "Manage Sub-admins",
     "manage_services": "Manage Services",

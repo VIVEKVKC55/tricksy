@@ -106,33 +106,38 @@
 {% endblock content %}
 
 {% block extrajs %}
-  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDQJC-cQjiKA_M_YCJbbefHMLCzBwzp1zs"></script>
+  <script src="https://maps.googleapis.com/maps/api/js?key={{ google_maps_api_key }}"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script>
     document.addEventListener("DOMContentLoaded", function () {
-      // Total Earnings Chart
+      const earningsLabels = {{ earnings_labels|safe }};
+      const earningsData = {{ earnings_data|safe }};
+      const serviceLabels = {{ service_labels|safe }};
+      const serviceData = {{ service_data|safe }};
+
+      // Weekly Earnings Chart
       new Chart(document.getElementById('earningsChart'), {
         type: 'line',
         data: {
-          labels: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
+          labels: earningsLabels,
           datasets: [{
             label: "Earnings (AED)",
-            data: [1000, 1200, 900, 1500, 1800, 2000, 1700],
+            data: earningsData,
             borderColor: "#007bff",
-            fill: false
+            fill: false,
           }]
         }
       });
 
-      // Revenue Per Service Type Chart
+      // Revenue by Service Type
       new Chart(document.getElementById('serviceRevenueChart'), {
         type: 'bar',
         data: {
-          labels: ["Cleaning", "Repair", "Maintenance"],
+          labels: serviceLabels,
           datasets: [{
             label: "Revenue (AED)",
-            data: [4000, 2500, 3000],
-            backgroundColor: ["#0d6efd", "#ffc107", "#198754"]
+            data: serviceData,
+            backgroundColor: ["#0d6efd", "#ffc107", "#198754"],
           }]
         }
       });
