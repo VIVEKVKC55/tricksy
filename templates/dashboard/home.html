@@ -5,21 +5,40 @@
 {% block content %}
 <!-- Row 1 - Top Widgets -->
           <div class="row">
-            <div class="col-lg-4">
+            <div class="col-lg-8">
               <div class="card">
                 <div class="card-body">
-                  <h5 class="card-title">Today’s Bookings</h5>
-                  <ul class="list-group">
-                    <li class="list-group-item d-flex justify-content-between">
-                      Booking #101 <span class="badge bg-primary">Confirmed</span>
-                    </li>
-                    <li class="list-group-item d-flex justify-content-between">
-                      Booking #102 <span class="badge bg-warning">Pending</span>
-                    </li>
-                    <li class="list-group-item d-flex justify-content-between">
-                      Booking #103 <span class="badge bg-success">Completed</span>
-                    </li>
-                  </ul>
+                  <h5 class="card-title mb-3">📅 Today’s Bookings ({{ today_date }})</h5>
+
+                  {% if today_bookings %}
+                    <ul class="list-group">
+                      {% for booking in today_bookings %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                          <div>
+                            <strong>{{ booking.reference }}</strong> — 
+                            {{ booking.customer_name }}<br>
+                            <small class="text-muted">
+                              {{ booking.region }} | {{ booking.service_names }}
+                            </small>
+                          </div>
+                          <span class="
+                            badge 
+                            {% if 'Confirmed' in booking.payment_status %}
+                              bg-success
+                            {% elif 'Pending' in booking.payment_status %}
+                              bg-warning text-dark
+                            {% else %}
+                              bg-secondary
+                            {% endif %}
+                          ">
+                            {{ booking.payment_status }}
+                          </span>
+                        </li>
+                      {% endfor %}
+                    </ul>
+                  {% else %}
+                    <p class="text-muted mt-3 mb-0">No bookings found for today.</p>
+                  {% endif %}
                 </div>
               </div>
             </div>
@@ -28,44 +47,44 @@
               <div class="card text-center">
                 <div class="card-body">
                   <h5 class="card-title">Pending Payments</h5>
-                  <h1 class="display-5 text-danger">8</h1>
+                  <h1 class="display-5 text-danger">{{ pending_payment_count }}</h1>
                   <p class="text-muted">Awaiting clearance</p>
                 </div>
               </div>
             </div>
-
-            <div class="col-lg-4">
+          </div>
+          <div class="row">
+            <div class="col-lg-6">
+                <div class="card">
+                  <div class="card-body">
+                    <h5 class="card-title">Bookings Per Region (Dubai)</h5>
+                    <div id="map" style="height: 525px; width: 100%;"></div>
+                  </div>
+                </div>
+            </div>
+            <div class="col-lg-6">
               <div class="card">
-                <div class="card-body">
-                  <h5 class="card-title">Total Earnings</h5>
-                  <canvas id="earningsChart" height="100"></canvas>
+                  <div class="card-body">
+                    <h5 class="card-title">Total Earnings</h5>
+                    <canvas id="earningsChart" height="300"></canvas>
+                  </div>
                 </div>
               </div>
-            </div>
           </div>
 
           <!-- Row 2 - Map & Revenue -->
           <div class="row mt-4">
-            <div class="col-lg-6">
-              <div class="card">
-                <div class="card-body">
-                  <h5 class="card-title">Bookings Per Region (Dubai)</h5>
-                  <div id="map" style="height: 600px; width: 100%;"></div>
-                </div>
-              </div>
-            </div>
-
-            <div class="col-lg-6">
+            <div class="col-lg-12">
               <div class="card">
                 <div class="card-body">
                   <h5 class="card-title">Revenue Per Service Type</h5>
-                  <canvas id="serviceRevenueChart" height="300"></canvas>
+                  <canvas id="serviceRevenueChart" height="200"></canvas>
                 </div>
               </div>
             </div>
           </div>
 
-          <!-- Row 3 - Cleaner Assignment Table -->
+          <!-- Row 3 - Cleaner Assignment Table
           <div class="row mt-4">
             <div class="col-12">
               <div class="card">
@@ -102,7 +121,7 @@
                 </div>
               </div>
             </div>
-          </div>
+          </div> -->
 {% endblock content %}
 
 {% block extrajs %}
