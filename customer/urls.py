@@ -8,5 +8,6 @@ urlpatterns = [
     path('create/', views.CustomerCreateView.as_view(), name='create'),
     path('edit/<int:pk>/', views.CustomerUpdateView.as_view(), name='edit'),
     path('delete/<int:pk>/', views.CustomerDeleteView.as_view(), name='delete'),
+    path("check/", views.CustomerAjaxView.as_view(), name="check"),
     # path('detail/<int:pk>/', views.CustomerDetailView.as_view(), name='detail'),
 ]

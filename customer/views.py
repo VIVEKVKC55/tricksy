@@ -2,7 +2,7 @@ from django.shortcuts import render
 from django.urls import reverse_lazy
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView
 from django.contrib import messages
-
+from django.views import View
 from account.utils import user_has_access
 from .models import Customer
 from .forms import CustomerForm
@@ -82,3 +82,26 @@ class CustomerDeleteView(LoginRequiredMixin, DeleteView):
         self.object = self.get_object()
         self.object.delete()
         return JsonResponse({"success": True, "message": "Customer deleted successfully!"})
+
+
+class CustomerAjaxView(View):
+    def get(self, request):
+        email = request.GET.get("email")
+        if not email:
+            return JsonResponse({"error": "Email is required"}, status=400)
+
+        try:
+            customer = Customer.objects.select_related("region").get(email=email)
+            data = {
+                "full_name": customer.full_name,
+                "region": customer.region.id if customer.region else "",
+                "region_name": customer.region.region_name if customer.region else "",
+                "address": customer.address,
+                "google_location": customer.google_location,
+                "building": customer.building,
+                "unit": customer.unit,
+                "location_notes": customer.location_notes,
+            }
+            return JsonResponse({"exists": True, "data": data})
+        except Customer.DoesNotExist:
+            return JsonResponse({"exists": False})
