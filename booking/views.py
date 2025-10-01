@@ -13,6 +13,7 @@ from .forms import BookingForm, BookingServiceForm, BookingCleanerForm
 from customer.forms import CustomerForm
 from payment.models import Payment
 from cleaner.models import Cleaner
+from customer.models import Customer
 from django.db import transaction
 from account.utils import user_has_access
 
@@ -93,13 +94,20 @@ class BookingCreateView(LoginRequiredMixin, View):
             BookingService, form=BookingServiceForm, extra=1, can_delete=True
         )
         service_formset = ServiceFormSet(request.POST, queryset=BookingService.objects.none())
+
         try:
             if all([booking_form.is_valid(), customer_form.is_valid(), service_formset.is_valid()]):
-                # Save customer
-                customer = customer_form.save()
+                email = customer_form.cleaned_data.get("email")
+                existing_customer = Customer.objects.filter(email=email).first()
+                if existing_customer:
+                    customer_form = CustomerForm(request.POST, instance=existing_customer)
+                    customer = customer_form.save()
+                else:
+                    # Create new customer
+                    customer = customer_form.save()
 
-                # Save booking linked to customer
-                booking = booking_form.save(commit=False, user=request.user)
+                # Save booking linked to this customer
+                booking = booking_form.save(commit=False)
                 booking.customer = customer
                 booking.created_by = request.user
                 booking.save()
@@ -111,8 +119,9 @@ class BookingCreateView(LoginRequiredMixin, View):
                     service.booking = booking
                     service.save()
 
-                messages.success(request, "Booking and customer created successfully!")
-                return redirect("booking:list")  # redirect to booking list page
+                messages.success(request, "Booking and customer saved successfully!")
+                return redirect("booking:list")
+
         except Exception as e:
             messages.error(request, f"An error occurred: {str(e)}")
         return render(request, "booking/create.html", {
