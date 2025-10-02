@@ -50,7 +50,8 @@ class HomeView(LoginRequiredMixin, TemplateView):
                 .aggregate(total=Sum("net_amount"))["total"]
                 or 0
             )
-            service_labels.append(service.get_service_type_display())
+            # 🔧 FIXED: Use field instead of calling like a function
+            service_labels.append(service.name)
             service_data.append(float(total))
 
         context["service_labels"] = service_labels
@@ -71,21 +72,17 @@ class HomeView(LoginRequiredMixin, TemplateView):
             .order_by("-created_at")
         )
 
-        # Enhance with computed info
         booking_list = []
         for booking in today_bookings:
             payments = booking.payments.all()
             total_paid = sum(p.net_amount for p in payments)
-            
-            # ✅ Correct way to call display method
+
             service_names = ", ".join(
-                bs.service.get_service_type_display() for bs in booking.booking_services.all()
+                bs.name for bs in booking.booking_services.all()
             )
 
-            # ✅ Payment status
             payment_status = "Confirmed ✅" if payments.exists() else "Pending ❌"
 
-            # ✅ Region logic (if customer has region)
             region = getattr(booking.customer, "region", None) or getattr(booking, "region", "N/A")
 
             booking_list.append({
@@ -102,7 +99,6 @@ class HomeView(LoginRequiredMixin, TemplateView):
         context["today_date"] = today
 
         return context
-
 
 class RegionBookingDataView(LoginRequiredMixin, View):
     def get(self, request):
