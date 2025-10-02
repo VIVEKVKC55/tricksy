@@ -78,7 +78,7 @@ class HomeView(LoginRequiredMixin, TemplateView):
             total_paid = sum(p.net_amount for p in payments)
 
             service_names = ", ".join(
-                bs.name for bs in booking.booking_services.all()
+                bs.service.name() for bs in booking.booking_services.all()
             )
 
             payment_status = "Confirmed ✅" if payments.exists() else "Pending ❌"
