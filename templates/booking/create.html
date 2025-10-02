@@ -25,18 +25,18 @@
         <!-- Customer Details Section -->
         <h6 class="border-bottom pb-2 mb-3">Customer Details</h6>
         <div class="row">
-          <div class="col-md-6 mb-3">
+          <div class="col-md-4 mb-3">
             {{ customer_form.email.label_tag }}
             {{ customer_form.email }}
             <small class="text-danger">
               *Enter customer email to auto-fill details if already registered.
             </small>
           </div>
-          <div class="col-md-6 mb-3">
+          <div class="col-md-4 mb-3">
             {{ customer_form.full_name.label_tag }}
             {{ customer_form.full_name }}
           </div>
-          <div class="col-md-6 mb-3">
+          <div class="col-md-4 mb-3">
             {{ customer_form.region.label_tag }}
             {{ customer_form.region }}
           </div>
@@ -109,14 +109,9 @@
               {{ sf.service.label_tag }}
               {{ sf.service }}
             </div>
-            <div class="col-md-4">
+            <div class="col-md-6">
               {{ sf.number_of_cleaners.label_tag }}
               {{ sf.number_of_cleaners }}
-            </div>
-            <div class="col-md-2">
-              {% if sf.DELETE %}
-                {{ sf.DELETE }} <label>Delete</label>
-              {% endif %}
             </div>
           </div>
         {% endfor %}

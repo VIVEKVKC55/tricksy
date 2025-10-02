@@ -46,6 +46,7 @@
                      data-url="{% url 'cleaner:delete' cleaner.pk %}">
                     Delete
                   </a>
+                  <a href="{% url 'cleaner:cleaner-calendar' cleaner.pk %}" class="btn btn-sm btn-warning">cleaner-calendar</a>
                 </td>
               </tr>
               {% empty %}

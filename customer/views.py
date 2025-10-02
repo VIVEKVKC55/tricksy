@@ -1,4 +1,4 @@
-from django.shortcuts import render
+from django.shortcuts import render, get_object_or_404
 from django.urls import reverse_lazy
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView
 from django.contrib import messages
@@ -8,8 +8,12 @@ from .models import Customer
 from .forms import CustomerForm
 from django.http import JsonResponse
 from django.contrib.auth.mixins import LoginRequiredMixin
-
+from django.utils import timezone
+from datetime import datetime
+from booking.models import Booking
 # List View with DataTable
+
+
 class CustomerListView(LoginRequiredMixin, ListView):
     model = Customer 
     template_name = "customer/list.html"
@@ -105,3 +109,56 @@ class CustomerAjaxView(View):
             return JsonResponse({"exists": True, "data": data})
         except Customer.DoesNotExist:
             return JsonResponse({"exists": False})
+        
+
+class CustomerCalendarView(View):
+    """Render FullCalendar for customer's bookings."""
+    template_name = "customer/calendar.html"
+
+    def get(self, request, customer_id):
+        customer = get_object_or_404(Customer, customer_id=customer_id)
+        return render(request, self.template_name, {"customer": customer})
+
+
+class CustomerCalendarDataView(View):
+    """Provide all bookings of a specific customer in JSON format."""
+
+    def get(self, request, customer_id):
+        now = timezone.localtime(timezone.now())
+        events = []
+
+        bookings = (
+            Booking.objects
+            .select_related("customer")
+            .filter(customer__customer_id=customer_id)
+        )
+
+        for booking in bookings:
+            start_dt = timezone.make_aware(datetime.combine(booking.start_date, booking.start_time))
+            end_dt = timezone.make_aware(datetime.combine(booking.end_date, booking.end_time))
+
+            if end_dt < now:
+                color = "#4CAF50"  # ✅ Completed
+                status = "Completed"
+            elif start_dt > now:
+                color = "#2196F3"  # 🔵 Upcoming
+                status = "Upcoming"
+            else:
+                color = "#FFC107"  # 🟡 Ongoing
+                status = "Ongoing"
+
+            events.append({
+                "id": booking.id,
+                "title": f"{booking.booking_reference} — {booking.customer.full_name}",
+                "start": start_dt.isoformat(),
+                "end": end_dt.isoformat(),
+                "color": color,
+                "extendedProps": {
+                    "status": status,
+                    "address": booking.customer.address,
+                    "duration_hours": round((end_dt - start_dt).total_seconds() / 3600, 1),
+                    "region": booking.customer.region.region_name if booking.customer.region else "N/A",
+                },
+            })
+
+        return JsonResponse(events, safe=False)

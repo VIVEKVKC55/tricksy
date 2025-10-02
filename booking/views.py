@@ -4,18 +4,21 @@ from django.shortcuts import redirect, render, get_object_or_404
 from django.views import View
 from django.forms import modelformset_factory
 from django.contrib import messages
-from django.views.generic import ListView, DeleteView
+from django.views.generic import ListView, DeleteView, TemplateView
 from django.urls import reverse_lazy
 
-from django.db.models import Count, Prefetch
+from django.db.models import Count, Prefetch, Q
 from .models import Booking, BookingService, BookingCleaner
-from .forms import BookingForm, BookingServiceForm, BookingCleanerForm
+from .forms import BookingForm, BookingServiceForm
 from customer.forms import CustomerForm
 from payment.models import Payment
 from cleaner.models import Cleaner
 from customer.models import Customer
 from django.db import transaction
 from account.utils import user_has_access
+from django.utils import timezone
+from datetime import datetime
+from decimal import Decimal
 
 
 class BookingListView(LoginRequiredMixin, ListView):
@@ -232,20 +235,61 @@ class BookingAssignView(LoginRequiredMixin, View):
             )
         return super().dispatch(request, *args, **kwargs)
 
+    def calculate_booking_cost(self, booking):
+        """Calculate total booking cost based on services, duration, and cleaners."""
+        total_cost = Decimal("0.00")
+
+        # Combine start + end times
+        start_dt = datetime.combine(booking.start_date, booking.start_time)
+        end_dt = datetime.combine(booking.end_date, booking.end_time)
+        duration_minutes = (end_dt - start_dt).total_seconds() / 60
+        duration_hours = Decimal(duration_minutes) / Decimal(60)
+
+        # Get all booking services
+        for bs in booking.booking_services.all():
+            base_price = bs.service.base_price  # Decimal
+            num_cleaners = Decimal(bs.number_of_cleaners)
+
+            cost = base_price * duration_hours * num_cleaners
+            total_cost += cost
+
+        # Round to 2 decimal places for currency
+        return total_cost.quantize(Decimal("0.01"))
+
     def get(self, request, pk):
         """Display the cleaner assignment and payment form."""
         booking = get_object_or_404(Booking, pk=pk)
-        cleaners = Cleaner.objects.all()
-        assigned_cleaners = booking.booking_cleaners.values_list("cleaner_id", flat=True)
+
+        booking_start = datetime.combine(booking.start_date, booking.start_time)
+        booking_end = datetime.combine(booking.end_date, booking.end_time)
+
+        overlapping_cleaners = BookingCleaner.objects.filter(
+            booking__start_date__lte=booking.end_date,
+            booking__end_date__gte=booking.start_date,
+        ).filter(
+            Q(booking__start_time__lt=booking.end_time) &
+            Q(booking__end_time__gt=booking.start_time)
+        ).exclude(booking=booking).values_list("cleaner_id", flat=True)
+
+        assigned_cleaners = list(booking.booking_cleaners.values_list("cleaner_id", flat=True))
+
+        available_cleaners = Cleaner.objects.filter(
+            Q(is_available=True) | Q(id__in=assigned_cleaners)
+        ).exclude(id__in=overlapping_cleaners)
+
         payment = Payment.objects.filter(booking=booking).first()
         total_required_cleaners = booking.total_required_cleaners()
 
+        # 💰 Calculate auto total price
+        estimated_amount = self.calculate_booking_cost(booking)
+
         context = {
             "booking": booking,
-            "cleaners": cleaners,
-            "assigned_cleaners": list(assigned_cleaners),
+            "cleaners": available_cleaners,
+            "assigned_cleaners": assigned_cleaners,
             "payment": payment,
             "total_required_cleaners": total_required_cleaners,
+            "estimated_amount": estimated_amount,
         }
         return render(request, self.template_name, context)
 
@@ -304,3 +348,48 @@ class BookingAssignView(LoginRequiredMixin, View):
         except Exception as e:
             messages.error(request, f"⚠️ Error processing request: {str(e)}")
             return redirect("booking:assign", pk=pk)
+
+        
+
+class BookingCalendarView(LoginRequiredMixin, TemplateView):
+    """Render the Booking Calendar page with FullCalendar.js"""
+    template_name = "booking/calendar.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["page_title"] = "Bookings Calendar"
+        return context
+
+
+class BookingCalendarDataView(LoginRequiredMixin, View):
+    """Provide booking data as JSON for FullCalendar or React Big Calendar"""
+
+    def get(self, request, *args, **kwargs):
+        bookings = Booking.objects.all()
+
+        events = []
+        for booking in bookings:
+            # Format start & end datetime properly for FullCalendar
+            start_datetime = timezone.make_naive(
+                timezone.localtime(booking.start_datetime)
+            ).isoformat()
+            end_datetime = timezone.make_naive(
+                timezone.localtime(booking.end_datetime)
+            ).isoformat()
+
+            events.append({
+                "id": booking.id,
+                "title": f"{booking.customer.full_name} - {booking.region}",
+                "start": start_datetime,
+                "end": end_datetime,
+                "backgroundColor": "#007bff" if booking.status == "confirmed" else "#ffc107",
+                "borderColor": "#007bff",
+                "extendedProps": {
+                    "email": booking.customer.email,
+                    "address": booking.customer.address,
+                    "status": booking.status,
+                    "cleaners": getattr(booking, "number_of_cleaners", 0),
+                },
+            })
+
+        return JsonResponse(events, safe=False)

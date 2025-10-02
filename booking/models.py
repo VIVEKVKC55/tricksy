@@ -26,7 +26,7 @@ class Booking(models.Model):
         Returns total number of cleaners required across all services in this booking.
         """
         return sum(
-            bs.service.number_of_cleaners for bs in self.booking_services.all()
+            bs.number_of_cleaners for bs in self.booking_services.all()
         )
 
     class Meta:
@@ -34,15 +34,15 @@ class Booking(models.Model):
 
 class BookingService(models.Model):
     booking = models.ForeignKey(Booking, on_delete=models.CASCADE, related_name="booking_services")
-    service = models.ForeignKey(Service, on_delete=models.PROTECT, related_name="service_bookings")
-
-    class Meta:
-        unique_together = ("booking", "service")
+    service = models.ForeignKey(Service, on_delete=models.CASCADE, related_name="booking_services")
+    number_of_cleaners = models.PositiveIntegerField(default=1)
 
     def __str__(self):
-        return f"{self.booking.booking_reference} - {self.service.name}"
+        return f"{self.booking.booking_reference} - {self.service.name} ({self.number_of_cleaners} cleaners)"
+
     class Meta:
-        db_table = 'booking_services'
+        db_table = "booking_services"
+
 
 class BookingCleaner(models.Model):
     booking = models.ForeignKey(Booking, on_delete=models.CASCADE, related_name="booking_cleaners")

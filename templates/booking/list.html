@@ -14,15 +14,12 @@
                 </a>
             </div>
             <div class="table-responsive">
-            <table class="table table-hover">
+            <table id="bookingTable" class="table table-hover">
               <thead>
                 <tr>
                   <th>Reference</th>
-                  <th>Customer</th>
-                  <th>Address</th>
                   <th>Region</th>
                   <th>Services</th>
-                  {% comment %} <th>No. of Cleaners</th> {% endcomment %}
                   <th>Cleaners</th>
                   <th>Duration (Start → End)</th>
                   <th>Payment Info</th>
@@ -38,15 +35,13 @@
                   <td><strong>{{ booking.booking_reference }}</strong></td>
 
                   <!-- Customer Info -->
-                  <td>{{ booking.customer.full_name }}</td>
-                  <td>{{ booking.customer.address|default:"-" }}</td>
                   <td>{{ booking.customer.region|default:"-" }}</td>
 
                   <!-- Services -->
                   <td>
                     {% for bs in booking.booking_services.all %}
                       <span class="badge bg-primary mb-1">
-                      {{ bs.service.get_service_type_display }}
+                      {{ bs.service.name }}
                       </span><br>
                     {% empty %}
                       <span class="text-muted">No services</span>
@@ -80,7 +75,7 @@
 
                   <!-- Actions -->
                   <td>
-                    <a href="{% url 'booking:update' booking.pk %}" class="btn btn-sm btn-warning me-1" title="Edit">
+                    <a href="{% url 'booking:update' booking.pk %}" class="btn btn-sm btn-warning me-1" data-toggle="tooltip" data-placement="top" title="Edit">
                       <i class="fa fa-edit"></i>
                     </a>
                     <a href="javascript:void(0);" class="btn btn-sm btn-danger delete-btn" data-url="{% url 'booking:delete' booking.pk %}" title="Delete">
@@ -109,6 +104,19 @@
 
 {% block extrajs %}
 <script>
+$(document).ready(function () {
+  $('#bookingTable').DataTable({
+    pageLength: 10,
+    order: [[7, 'desc']],
+    columnDefs: [
+      { orderable: false, targets: [3, 6] } // Disable sorting for Service & Payment columns
+    ],
+    language: {
+      search: "_INPUT_",
+      searchPlaceholder: "Search bookings..."
+    }
+  });
+});
 document.addEventListener("DOMContentLoaded", function() {
   const deleteButtons = document.querySelectorAll(".delete-btn");
 

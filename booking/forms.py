@@ -40,10 +40,34 @@ class BookingForm(forms.ModelForm):
 class BookingServiceForm(forms.ModelForm):
     class Meta:
         model = BookingService
-        fields = ["service"]
+        fields = ["service", "number_of_cleaners"]
+
         widgets = {
-            "service": forms.Select(attrs={"class": "form-select"}),
+            "service": forms.Select(
+                attrs={
+                    "class": "form-select",
+                    "placeholder": "Select a service",
+                }
+            ),
+            "number_of_cleaners": forms.NumberInput(
+                attrs={
+                    "class": "form-control",
+                    "min": "1",
+                    "step": "1",
+                    "placeholder": "Enter number of cleaners",
+                }
+            ),
         }
+
+        labels = {
+            "service": "Service Type",
+            "number_of_cleaners": "No. of Cleaners",
+        }
+
+        help_texts = {
+            "number_of_cleaners": "Specify how many cleaners are needed for this service.",
+        }
+
 
 
 class BookingCleanerForm(forms.ModelForm):

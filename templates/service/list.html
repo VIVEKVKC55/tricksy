@@ -19,10 +19,11 @@
             <thead>
               <tr>
                 <th>ID</th>
-                <th>Service Type</th>
+                <th>Name</th>
+                <th>Description</th>
                 <th>Duration (min)</th>
                 <th>Material</th>
-                <th>Number Of Cleaners</th>
+                <th>Base Price</th>
                 <th>Actions</th>
               </tr>
             </thead>
@@ -30,10 +31,11 @@
               {% for service in services %}
               <tr>
                 <td>{{ service.id }}</td>
-                <td>{{ service.service_type }}</td>
+                <td>{{ service.name }}</td>
+                <td>{{ service.description }}</td>
                 <td>{{ service.duration }}</td>
                 <td>{{ service.material|default:"-" }}</td>
-                <td>{{ service.number_of_cleaners }}</td>
+                <td>{{ service.base_price }}</td>
                 <td>
                   <a href="{% url 'service:edit' service.pk %}" class="btn btn-sm btn-warning">Edit</a>
                   <a href="javascript:void(0);" class="btn btn-danger btn-sm delete-btn" data-url="{% url 'service:delete' service.pk %}">

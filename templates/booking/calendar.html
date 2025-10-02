@@ -1,0 +1,47 @@
+{% extends "layout/layout.html" %}
+{% block title %}Bookings Calendar{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <div class="card shadow-sm">
+    <div class="card-body">
+      <h5 class="card-title mb-4">📅 Booking Calendar</h5>
+      <div id="calendar"></div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extrajs %}
+<link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
+
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const calendarEl = document.getElementById("calendar");
+
+    const calendar = new FullCalendar.Calendar(calendarEl, {
+      initialView: "dayGridMonth",
+      themeSystem: "bootstrap5",
+      headerToolbar: {
+        left: "prev,next today",
+        center: "title",
+        right: "dayGridMonth,timeGridWeek,timeGridDay",
+      },
+      events: "{% url 'booking:calendar-data' %}",
+      eventClick: function (info) {
+        const e = info.event.extendedProps;
+        alert(
+          `Booking Details:\n` +
+          `Customer: ${info.event.title}\n` +
+          `Email: ${e.email}\n` +
+          `Address: ${e.address}\n` +
+          `Status: ${e.status}`
+        );
+      },
+    });
+
+    calendar.render();
+  });
+</script>
+{% endblock %}

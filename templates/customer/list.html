@@ -53,6 +53,7 @@
                             data-url="{% url 'customer:delete' customer.pk %}">
                             Delete
                         </a>
+                        <a href="{% url 'customer:customer-calendar' customer.pk %}" class="btn btn-sm btn-warning">customer-calendar</a>
                     </td>
                 </tr>
                 {% empty %}
